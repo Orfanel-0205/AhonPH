@@ -1,0 +1,219 @@
+[
+  {
+    "text": "Nag-jeep ako 26 papuntang trabaho, lunch sa karinderya 95, load 50 sa Globe",
+    "expected": [
+      {
+        "type": "expense",
+        "categories": [
+          "transport"
+        ],
+        "pesos": 26
+      },
+      {
+        "type": "expense",
+        "categories": [
+          "food"
+        ],
+        "pesos": 95
+      },
+      {
+        "type": "expense",
+        "categories": [
+          "load_internet"
+        ],
+        "pesos": 50
+      }
+    ]
+  },
+  {
+    "text": "Pinadala ko kay mama 3,000 ngayong kinsenas",
+    "expected": [
+      {
+        "type": "expense",
+        "categories": [
+          "family"
+        ],
+        "pesos": 3000
+      }
+    ]
+  },
+  {
+    "text": "Sweldo ko kanina 9,815",
+    "expected": [
+      {
+        "type": "income",
+        "categories": [
+          "salary"
+        ],
+        "pesos": 9815
+      }
+    ]
+  },
+  {
+    "text": "Meralco 1,850 tapos Maynilad 420",
+    "expected": [
+      {
+        "type": "expense",
+        "categories": [
+          "utilities"
+        ],
+        "pesos": 1850
+      },
+      {
+        "type": "expense",
+        "categories": [
+          "utilities"
+        ],
+        "pesos": 420
+      }
+    ]
+  },
+  {
+    "text": "upa sa boarding house 3,500",
+    "expected": [
+      {
+        "type": "expense",
+        "categories": [
+          "rent"
+        ],
+        "pesos": 3500
+      }
+    ]
+  },
+  {
+    "text": "bayad sa Home Credit 1,200",
+    "expected": [
+      {
+        "type": "expense",
+        "categories": [
+          "debt"
+        ],
+        "pesos": 1200
+      }
+    ]
+  },
+  {
+    "text": "milk tea 120 tapos sine 350 kasama barkada",
+    "expected": [
+      {
+        "type": "expense",
+        "categories": [
+          "leisure",
+          "food"
+        ],
+        "pesos": 120
+      },
+      {
+        "type": "expense",
+        "categories": [
+          "leisure"
+        ],
+        "pesos": 350
+      }
+    ]
+  },
+  {
+    "text": "Binigyan ako ni tita ng 1,000 pang-birthday",
+    "expected": [
+      {
+        "type": "income",
+        "categories": [
+          "allowance",
+          "other_income"
+        ],
+        "pesos": 1000
+      }
+    ]
+  },
+  {
+    "text": "Grab pauwi 1.5k kasi umuulan",
+    "expected": [
+      {
+        "type": "expense",
+        "categories": [
+          "transport"
+        ],
+        "pesos": 1500
+      }
+    ]
+  },
+  {
+    "text": "gamot sa Mercury 245.50",
+    "expected": [
+      {
+        "type": "expense",
+        "categories": [
+          "health"
+        ],
+        "pesos": 245.5
+      }
+    ]
+  },
+  {
+    "text": "nakabenta ako ng tocino sa officemates, 650",
+    "expected": [
+      {
+        "type": "income",
+        "categories": [
+          "sideline"
+        ],
+        "pesos": 650
+      }
+    ]
+  },
+  {
+    "text": "Shopee checkout 799 para sa sapatos",
+    "expected": [
+      {
+        "type": "expense",
+        "categories": [
+          "personal"
+        ],
+        "pesos": 799
+      }
+    ]
+  },
+  {
+    "text": "baon ng anak 100 at school project 250",
+    "expected": [
+      {
+        "type": "expense",
+        "categories": [
+          "education"
+        ],
+        "pesos": 100
+      },
+      {
+        "type": "expense",
+        "categories": [
+          "education"
+        ],
+        "pesos": 250
+      }
+    ]
+  },
+  {
+    "text": "kahapon gasul 1,100, ngayon bigas 280",
+    "expected": [
+      {
+        "type": "expense",
+        "categories": [
+          "utilities",
+          "food"
+        ],
+        "pesos": 1100
+      },
+      {
+        "type": "expense",
+        "categories": [
+          "food"
+        ],
+        "pesos": 280
+      }
+    ]
+  },
+  {
+    "text": "Ang ganda ng araw ngayon!",
+    "expected": []
+  }
+]

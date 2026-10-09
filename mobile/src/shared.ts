@@ -16,4 +16,5 @@ export { breakdownReceipt, receiptTips, type GroupTotal } from "../../src/lib/re
 export { findPricedLines, explainCharges, type ChargeNote, type PricedLine } from "../../src/lib/traveler";
 export { FX, convertFromPhp, formatForeign, type CurrencyCode } from "../../src/lib/rates";
 export { ECON_FACTS } from "../../src/lib/econ";
-export type { ParsedRecord } from "../../src/lib/ai";
+export { ADVISOR_SYSTEM_PROMPT, advisorUserMessage, normalizeQuickLog, quickLogSystemPrompt, type ParsedRecord } from "../../src/lib/ai";
+export { QUICKLOG_CASES, scoreQuickLog } from "../../src/lib/evalQuicklog";

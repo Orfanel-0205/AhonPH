@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, TextInput, View } from "react-native";
 import { Button, Card, Chip, ErrorBox, H2, Muted, Pill, styles } from "../components";
 import { hubAdvise, hubQuickLog, hubStatus, normalizeHubUrl, type HubStatus } from "../hub";
-import { PhoneAiCard } from "../PhoneAi";
+import { phoneAdvise, phoneQuickLog } from "../nanoEngine";
+import { PhoneAiCard, useNano } from "../PhoneAi";
 import {
   budgetStatuses,
   buildAdvisorContext,
@@ -21,6 +22,61 @@ import { newId, useStore } from "../store";
 import { C, S } from "../theme";
 
 const SUGGESTIONS = ["Saan napupunta ang pera ko?", "Paano ako makakatipid sa susunod na buwan?", "Paano ako maaapektuhan ng inflation?"];
+
+type Result<T> = { ok: true; data: T } | { ok: false; error: string };
+
+/** Where the language model runs. Both are local: this phone, or the user's own laptop over Wi-Fi. */
+interface Engine {
+  id: "phone" | "hub";
+  label: string;
+  icon: "phone-portrait" | "laptop";
+  quickLog: (text: string, today: string) => Promise<Result<{ records: ParsedRecord[]; meta: string }>>;
+  advise: (question: string, context: string, history: { role: "user" | "assistant"; content: string }[]) => Promise<Result<{ text: string; meta: string }>>;
+}
+
+const secs = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
+const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+const PHONE_ENGINE: Engine = {
+  id: "phone",
+  label: "This phone · Gemini Nano",
+  icon: "phone-portrait",
+  quickLog: async (text, today) => {
+    try {
+      const r = await phoneQuickLog(text, today);
+      return { ok: true, data: { records: r.records, meta: `Ran on this phone · ${r.meta.model} · ${secs(r.meta.durationMs)}` } };
+    } catch (e) {
+      return { ok: false, error: errorText(e) };
+    }
+  },
+  advise: async (question, context, history) => {
+    try {
+      const r = await phoneAdvise(question, context, history);
+      return { ok: true, data: { text: r.text, meta: `Ran on this phone · ${r.meta.model} · ${secs(r.meta.durationMs)}` } };
+    } catch (e) {
+      return { ok: false, error: errorText(e) };
+    }
+  },
+};
+
+function hubEngine(hub: string, modelLabel: string): Engine {
+  return {
+    id: "hub",
+    label: "KitaPH Hub · laptop",
+    icon: "laptop",
+    quickLog: async (text, today) => {
+      const r = await hubQuickLog(hub, text, today);
+      return r.ok
+        ? { ok: true, data: { records: r.data.records, meta: `Ran on your hub · ${r.data.meta.model} · ${r.data.meta.processor} · ${secs(r.data.meta.durationMs)}` } }
+        : r;
+    },
+    advise: async (question, context, history) => {
+      const started = Date.now();
+      const r = await hubAdvise(hub, { question, context, history });
+      return r.ok ? { ok: true, data: { text: r.data, meta: `Ran on your hub · ${modelLabel} · ${secs(Date.now() - started)}` } } : r;
+    },
+  };
+}
 
 export function AskScreen() {
   const { data, update, settings, setSettings } = useStore();
@@ -46,15 +102,22 @@ export function AskScreen() {
   }, []);
 
   const connected = Boolean(status?.reachable && hub);
+  const nano = useNano();
+  const engines: Engine[] = [
+    ...(nano.status === "available" ? [PHONE_ENGINE] : []),
+    ...(connected ? [hubEngine(hub, status!.text.name)] : []),
+  ];
+  const [engineId, setEngineId] = useState<Engine["id"] | null>(null);
+  const engine = engines.find((e) => e.id === engineId) ?? engines[0] ?? null;
 
   return (
     <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>Kita AI</Text>
       <Muted style={{ marginBottom: S.md }}>
-        Taglish logging and advice use a bigger model on your own laptop (the KitaPH Hub), over local Wi-Fi. No internet needed.
+        Taglish logging and advice run on this phone with Android's built-in AI, or on your own laptop over Wi-Fi. No cloud AI, no internet needed.
       </Muted>
 
-      <PhoneAiCard />
+      <PhoneAiCard nano={nano} />
 
       <Card>
         <H2>KitaPH Hub</H2>
@@ -81,9 +144,16 @@ export function AskScreen() {
         <Muted style={{ marginTop: S.sm }}>On the laptop run the hub, then type the address it shows under “Network”.</Muted>
       </Card>
 
-      {connected ? (
+      {engine ? (
         <>
-          <QuickLog hub={hub} onSave={(records) =>
+          {engines.length > 1 ? (
+            <View style={[styles.wrap, { marginBottom: S.md }]}>
+              {engines.map((e) => (
+                <Chip key={e.id} label={e.label} selected={engine.id === e.id} onPress={() => setEngineId(e.id)} />
+              ))}
+            </View>
+          ) : null}
+          <QuickLog engine={engine} onSave={(records) =>
             update((d) => ({
               ...d,
               transactions: [
@@ -92,14 +162,14 @@ export function AskScreen() {
               ],
             }))
           } />
-          <Advisor hub={hub} data={data} />
+          <Advisor engine={engine} data={data} />
         </>
       ) : null}
     </ScrollView>
   );
 }
 
-function QuickLog({ hub, onSave }: { hub: string; onSave: (r: ParsedRecord[]) => void }) {
+function QuickLog({ engine, onSave }: { engine: Engine; onSave: (r: ParsedRecord[]) => void }) {
   const [text, setText] = useState("");
   const [records, setRecords] = useState<ParsedRecord[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -109,11 +179,11 @@ function QuickLog({ hub, onSave }: { hub: string; onSave: (r: ParsedRecord[]) =>
   async function run() {
     setBusy(true);
     setError(null);
-    const r = await hubQuickLog(hub, text, todayISO());
+    const r = await engine.quickLog(text, todayISO());
     setBusy(false);
     if (!r.ok) return setError(r.error);
     setRecords(r.data.records);
-    setMeta(`${r.data.meta.model} · ${r.data.meta.processor} · ${(r.data.meta.durationMs / 1000).toFixed(1)}s`);
+    setMeta(r.data.meta);
   }
 
   return (
@@ -133,7 +203,7 @@ function QuickLog({ hub, onSave }: { hub: string; onSave: (r: ParsedRecord[]) =>
       {error ? <View style={{ marginTop: S.sm }}><ErrorBox message={error} /></View> : null}
       {records ? (
         <View style={{ marginTop: S.md }}>
-          {meta ? <Pill label={`Ran on your hub · ${meta}`} tone="good" icon="laptop" /> : null}
+          {meta ? <Pill label={meta} tone="good" icon={engine.icon} /> : null}
           {records.length === 0 ? <Muted style={{ marginTop: S.sm }}>Walang nakitang halaga.</Muted> : null}
           {records.map((r, i) => (
             <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.surface2 }}>
@@ -165,9 +235,10 @@ interface Turn {
   role: "user" | "assistant";
   content: string;
   ungrounded?: string[];
+  meta?: string;
 }
 
-function Advisor({ hub, data }: { hub: string; data: ReturnType<typeof useStore>["data"] }) {
+function Advisor({ engine, data }: { engine: Engine; data: ReturnType<typeof useStore>["data"] }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
@@ -188,10 +259,10 @@ function Advisor({ hub, data }: { hub: string; data: ReturnType<typeof useStore>
     const history = turns.map(({ role, content }) => ({ role, content }));
     setTurns((t) => [...t, { role: "user", content: question }]);
     setQ("");
-    const r = await hubAdvise(hub, { question, context, history });
+    const r = await engine.advise(question, context, history);
     setBusy(false);
     if (!r.ok) return setError(r.error);
-    setTurns((t) => [...t, { role: "assistant", content: r.data, ungrounded: findUngroundedNumbers(r.data, context) }]);
+    setTurns((t) => [...t, { role: "assistant", content: r.data.text, ungrounded: findUngroundedNumbers(r.data.text, context), meta: r.data.meta }]);
   }
 
   return (
@@ -206,7 +277,8 @@ function Advisor({ hub, data }: { hub: string; data: ReturnType<typeof useStore>
         <View key={i} style={{ marginBottom: S.sm, alignSelf: t.role === "user" ? "flex-end" : "stretch", backgroundColor: t.role === "user" ? C.brandSoft : C.surface2, borderRadius: 12, padding: S.md, maxWidth: "100%" }}>
           <Text style={{ fontSize: 14, color: C.text, lineHeight: 21 }}>{t.content.replace(/\*\*/g, "")}</Text>
           {t.role === "assistant" ? (
-            <View style={{ marginTop: 6 }}>
+            <View style={{ marginTop: 6, gap: 4 }}>
+              {t.meta ? <Muted>{t.meta}</Muted> : null}
               {t.ungrounded && t.ungrounded.length ? (
                 <Pill label={`Check these numbers: ${t.ungrounded.join(", ")}`} tone="warning" icon="warning" />
               ) : (

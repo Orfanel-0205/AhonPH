@@ -123,3 +123,15 @@ describe("normalizeReceipt", () => {
     expect(normalizeReceipt(null, today)).toBeNull();
   });
 });
+
+describe("quick-log test set scoring", async () => {
+  const { QUICKLOG_CASES, scoreQuickLog } = await import("./evalQuicklog");
+  it("has 15 cases and scores exact matches only", () => {
+    expect(QUICKLOG_CASES).toHaveLength(15);
+    const c = QUICKLOG_CASES[0];
+    const perfect = c.expected.map((e) => ({ type: e.type, category: e.categories[0], amountCentavos: Math.round(e.pesos * 100) }));
+    expect(scoreQuickLog(c, perfect)).toEqual({ pass: true, correct: 3, expected: 3 });
+    expect(scoreQuickLog(c, perfect.slice(1)).pass).toBe(false);
+    expect(scoreQuickLog(c, [...perfect, { type: "expense", category: "food", amountCentavos: 100 }]).pass).toBe(false);
+  });
+});
