@@ -44,3 +44,5 @@ next-env.d.ts
 /mobile/android
 /mobile/ios
 /mobile/.expo
+/mobile/modules/*/android/build
+/mobile/modules/*/android/.cxx

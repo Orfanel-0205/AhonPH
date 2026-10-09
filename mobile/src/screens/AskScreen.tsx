@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, TextInput, View } from "react-native";
 import { Button, Card, Chip, ErrorBox, H2, Muted, Pill, styles } from "../components";
 import { hubAdvise, hubQuickLog, hubStatus, normalizeHubUrl, type HubStatus } from "../hub";
+import { PhoneAiCard } from "../PhoneAi";
 import {
   budgetStatuses,
   buildAdvisorContext,
@@ -52,6 +53,8 @@ export function AskScreen() {
       <Muted style={{ marginBottom: S.md }}>
         Taglish logging and advice use a bigger model on your own laptop (the KitaPH Hub), over local Wi-Fi. No internet needed.
       </Muted>
+
+      <PhoneAiCard />
 
       <Card>
         <H2>KitaPH Hub</H2>
