@@ -99,6 +99,9 @@ describe("Gemini Nano translation checks", () => {
   it("accepts natural Japanese and strips labels and quotes", () => {
     expect(acceptTranslation("Where can I find Beijing Tower?", "Japanese: 「北京タワーはどこですか？」", "ja")).toBe("北京タワーはどこですか？");
   });
+  it("drops a romanization in parentheses (laptop models add one)", () => {
+    expect(acceptTranslation("Can I pay by card?", "カードで支払えますか？ (Kādo de shiharaiemasu ka?)", "ja")).toBe("カードで支払えますか？");
+  });
   it("rejects English, chatter and the wrong script", () => {
     expect(acceptTranslation("Where is the station?", "Sure! Here is the translation.", "ja")).toBeNull();
     expect(acceptTranslation("Where is the station?", "역은 어디예요?", "ja")).toBeNull();

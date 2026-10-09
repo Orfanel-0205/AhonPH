@@ -23,11 +23,19 @@ export const languageName = (code: string) => LANGUAGE_NAME[code] ?? "a foreign 
 /** At most 8 lines fit Gemini Nano's 256-token answer with a short note each. */
 export const MENU_MAX_LINES = 8;
 
+/**
+ * OCR often drops the dot in 丼 (rice bowl) and reads 井: 親子井, カツ井, 天井. On a menu or receipt a
+ * dish name ending in 井 is a 丼, so it is fixed before any AI sees it.
+ */
+export function fixDishOcr(name: string): string {
+  return name.replace(/([\p{Script=Han}\p{Script=Katakana}\p{Script=Hiragana}])井(?=$|[\s(（])/gu, "$1丼");
+}
+
 export function menuPrompt(lines: string[], lang: string): string {
   return `A phone camera read these lines from a menu or sign in ${languageName(lang)} (small reading mistakes are possible):
 ${lines
   .slice(0, MENU_MAX_LINES)
-  .map((l, i) => `${i + 1}. ${l}`)
+  .map((l, i) => `${i + 1}. ${fixDishOcr(l)}`)
   .join("\n")}
 For a Filipino traveler, give each line its common English name. For food and drink, add at most 10 words on what it is and say if it usually has pork, beef, seafood or alcohol. For anything else, write only the English name.
 The camera can confuse similar characters (like 井 and 丼), so guess the intended word. If you really don't know, write the line number and "not sure".

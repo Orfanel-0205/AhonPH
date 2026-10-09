@@ -4,7 +4,7 @@ import { Modal, Pressable, ScrollView, Share, Text, TextInput, View } from "reac
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Card, Chip, ErrorBox, H2, Muted, Pill, styles } from "../components";
 import { phonePolish, phoneRead, phoneSuggestReplies, phoneTranslate } from "../nanoEngine";
-import { useNano } from "../nanoStore";
+import { useLocalAI } from "../localAI";
 import { detectLanguage, downloadedLanguages, prepareTranslation, translateTexts } from "../onDevice";
 import {
   curatedTranslation,
@@ -49,17 +49,18 @@ const ME_LANGS: { code: MeLang; label: string }[] = [
 
 const langLabel = (code: string) => THEM_LANGS.find((l) => l.code === code)?.label ?? ME_LANGS.find((l) => l.code === code)?.label ?? code;
 
-const VIA_LABEL: Record<Via, string> = {
-  phrasebook: "✓ Checked phrase",
-  nano: "✨ Gemini Nano, on this phone",
-  polished: "✨ Tidied by Gemini Nano, then translated",
-  translator: "Translated on this phone",
-};
+const viaLabel = (via: Via, ai: string, where: string): string =>
+  ({
+    phrasebook: "✓ Checked phrase",
+    nano: `✨ ${ai}, ${where}`,
+    polished: `✨ Tidied by ${ai}, then translated`,
+    translator: "Translated on this phone",
+  })[via];
 
 /** Usap: two-way conversation help abroad. Speech, translation, reply ideas and voice all run on the phone. */
 export function TalkScreen({ incoming, onIncomingRead }: { incoming?: string | null; onIncomingRead?: () => void }) {
   const { settings, setSettings } = useStore();
-  const nano = useNano();
+  const ai = useLocalAI();
   const me = settings.meLang;
   const them = settings.themLang;
   const [scenario, setScenario] = useState<Scenario>("hotel");
@@ -112,7 +113,7 @@ export function TalkScreen({ incoming, onIncomingRead }: { incoming?: string | n
   async function refreshSuggestions(theySaidMe: string, theySaidEn: string, history: Line[]) {
     // Match on both readings: hints are keyed in Filipino and English.
     const hints = hintReplies(me, `${theySaidMe}\n${theySaidEn}`);
-    if (nano.status === "available") {
+    if (ai.available) {
       setThinking(true);
       try {
         let ideas = await phoneSuggestReplies(
@@ -151,7 +152,7 @@ export function TalkScreen({ incoming, onIncomingRead }: { incoming?: string | n
     setLines(put(line));
     // Gemini Nano reads Japanese, Korean and Chinese far more naturally than the small offline translator.
     let english: string | null = null;
-    if (nano.status === "available" && isNanoLang(from)) {
+    if (ai.available && isNanoLang(from)) {
       setReading(id);
       english = await phoneRead(original, from, scenario);
       setReading(null);
@@ -209,12 +210,12 @@ export function TalkScreen({ incoming, onIncomingRead }: { incoming?: string | n
       if (!translated) {
         let english = me === "en" ? t : await translate(t, me, "en");
         translated = curatedTranslation(english, them);
-        if (!translated && nano.status === "available" && isNanoLang(them)) {
+        if (!translated && ai.available && isNanoLang(them)) {
           translated = await phoneTranslate(english, them, scenario);
           if (translated) via = "nano";
         }
         if (!translated) {
-          if (nano.status === "available") {
+          if (ai.available) {
             const p = await phonePolish(english, scenario);
             if (p) {
               polished = p;
@@ -348,7 +349,7 @@ export function TalkScreen({ incoming, onIncomingRead }: { incoming?: string | n
               <Text style={{ fontSize: 12, color: C.muted, marginBottom: 4 }}>
                 🗣 Sila · {langLabel(l.lang ?? them)}
                 {l.source === "heard" ? " · heard on this phone" : l.source === "shared" ? " · shared message" : " · typed"}
-                {reading === l.id ? " · ✨ Gemini Nano is reading…" : l.via === "nano" ? " · ✨ read by Gemini Nano" : ""}
+                {reading === l.id ? ` · ✨ ${ai.name} is reading…` : l.via === "nano" ? ` · ✨ read by ${ai.name}` : ""}
               </Text>
               <View
                 style={{
@@ -416,7 +417,7 @@ export function TalkScreen({ incoming, onIncomingRead }: { incoming?: string | n
                   textAlign: "right",
                 }}
               >
-                🙋 Ako · {l.via ? VIA_LABEL[l.via] : ""}
+                🙋 Ako · {l.via ? viaLabel(l.via, ai.name, ai.where) : ""}
               </Text>
               <View
                 style={{
@@ -460,7 +461,7 @@ export function TalkScreen({ incoming, onIncomingRead }: { incoming?: string | n
         <View style={{ marginTop: S.lg }}>
           <View style={[styles.row, { justifyContent: "space-between", marginBottom: S.sm }]}>
             <Text style={{ fontSize: 14, fontWeight: "800", color: C.text }}>Puwedeng isagot</Text>
-            <Muted>{thinking ? "Gemini Nano is thinking…" : suggestionSource === "nano" ? "✨ Gemini Nano + phrasebook" : "Phrasebook"}</Muted>
+            <Muted>{thinking ? `${ai.name} is thinking…` : suggestionSource === "nano" ? `✨ ${ai.name} + phrasebook` : "Phrasebook"}</Muted>
           </View>
           {suggestions
             .filter((s) => !lines.some((l) => l.who === "me" && l.original === s))

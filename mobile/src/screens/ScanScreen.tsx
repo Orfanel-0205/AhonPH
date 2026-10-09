@@ -5,6 +5,7 @@ import { BarRow, Button, Card, Chip, ErrorBox, H2, InsightCard, Muted, Pill, sty
 import { ExplainReceipt, receiptContext } from "../ExplainReceipt";
 import { hubReceipt } from "../hub";
 import { phoneReadMenu, phoneReadReceipt } from "../nanoEngine";
+import { useLocalAI } from "../localAI";
 import { useNano } from "../nanoStore";
 import { expectedScript, recognizeAnyScript, recognizeText, SCRIPT_LABEL, type OcrResult } from "../native";
 import { detectLanguage, downloadedLanguages, prepareTranslation, translateTexts, TRAVELER_LANGUAGES } from "../onDevice";
@@ -391,7 +392,7 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
   const [translated, setTranslated] = useState<{ lang: string; labels: string[]; text: string; notes: ChargeNote[]; ms: number } | null>(null);
   const [phase, setPhase] = useState<"idle" | "downloading" | "translating">("idle");
   const [error, setError] = useState<string | null>(null);
-  const nano = useNano();
+  const ai = useLocalAI();
   const [menu, setMenu] = useState<{ readings: Map<number, MenuReading>; ms: number } | null>(null);
   const [menuBusy, setMenuBusy] = useState(false);
   // Item names on a receipt or menu; otherwise the first lines (a sign).
@@ -411,7 +412,7 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
       }
       setMenu(r);
     } catch (e) {
-      setError(`Gemini Nano couldn't read the menu: ${e instanceof Error ? e.message : String(e)}`);
+      setError(`${ai.name} couldn't read the menu: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setMenuBusy(false);
     }
@@ -419,9 +420,9 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
 
   // Japanese, Korean and Chinese menus: Gemini Nano reads them right away (the offline translator mangles dish names).
   useEffect(() => {
-    if (source && isNanoLang(source) && nano.status === "available" && !menu && !menuBusy && menuLines.length) readMenu();
+    if (source && isNanoLang(source) && ai.available && !menu && !menuBusy && menuLines.length) readMenu();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [source, nano.status]);
+  }, [source, ai.available]);
 
   useEffect(() => {
     detectLanguage(rows.join("\n")).then((src) => {
@@ -486,13 +487,13 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
   const showNotes = showTranslated ? showTranslated.notes : notes;
   const nameAt = (i: number) => menu?.readings.get(i)?.name ?? showTranslated?.labels[i] ?? names[i];
   const noteAt = (i: number) => menu?.readings.get(i)?.note || null;
-  const canExplain = nano.status === "available" && !!source && source !== "tl" && menuLines.length > 0;
+  const canExplain = ai.available && !!source && source !== "tl" && menuLines.length > 0;
   const nanoLine = !canExplain
     ? null
     : menuBusy
-      ? `✨ Gemini Nano is reading on this phone… ${menu?.readings.size ?? 0} of ${menuLines.length}`
+      ? `✨ ${ai.name} is reading ${ai.where}… ${menu?.readings.size ?? 0} of ${menuLines.length}`
       : menu
-        ? `✨ Names by Gemini Nano · ${menu.readings.size} of ${menuLines.length} in ${(menu.ms / 1000).toFixed(1)}s on this phone`
+        ? `✨ Names by ${ai.name} · ${menu.readings.size} of ${menuLines.length} in ${(menu.ms / 1000).toFixed(1)}s ${ai.where}`
         : null;
   const local = (amount: number) => (fromCurrency ? formatCurrency(amount, fromCurrency) : formatPeso(Math.round(amount * 100)));
   const inPesos = (amount: number) => (fromCurrency ? `≈${formatPeso(roundToPeso(convertToPhp(amount, fromCurrency)))}` : "");
@@ -660,7 +661,7 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
 
       {!abroad && !priced.length && canExplain && menu?.readings.size ? (
         <Card>
-          <H2>✨ Ano ito? · Gemini Nano</H2>
+          <H2>✨ Ano ito? · {ai.name}</H2>
           {nanoLine ? <Muted style={{ marginBottom: S.xs }}>{nanoLine}</Muted> : null}
           {menuLines.map((l, i) => (menu.readings.get(i) ? itemRow(`${l}-${i}`, i, l, null) : null))}
         </Card>
@@ -668,7 +669,7 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
 
       {canExplain && !menu && !menuBusy ? (
         <View style={{ marginBottom: S.md }}>
-          <Button label={names.length ? "✨ Explain these items (Gemini Nano)" : "✨ Explain this sign (Gemini Nano)"} variant="secondary" onPress={readMenu} />
+          <Button label={names.length ? `✨ Explain these items (${ai.name})` : `✨ Explain this sign (${ai.name})`} variant="secondary" onPress={readMenu} />
         </View>
       ) : null}
       {canExplain && (menu || menuBusy) ? <Muted style={{ marginBottom: S.md }}>AI reading made on this phone. If you have allergies or avoid pork, ask the staff.</Muted> : null}

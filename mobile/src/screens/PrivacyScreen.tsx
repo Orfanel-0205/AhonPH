@@ -7,7 +7,7 @@ import { useNano } from "../nanoStore";
 import { downloadedLanguages, TRAVELER_LANGUAGES } from "../onDevice";
 import { buildSampleData, ECON_FACTS, formatDate, formatPeso, FX, QUICKLOG_CASES, QUICKLOG_FINAL, QUICKLOG_HOLDOUT, scoreQuickLog, todayISO, type ParsedRecord, type QuickLogCase } from "../shared";
 import { EMPTY_DATA, useStore } from "../store";
-import { OfflineAIDemo, OnPhoneModels } from "./AILab";
+import { OfflineAIDemo, OnPhoneModels, TeamLaptopAI } from "./AILab";
 import { C, S } from "../theme";
 
 function Row({ title, body }: { title: string; body: string }) {
@@ -184,6 +184,7 @@ export function PrivacyScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
       </Muted>
 
       <OfflineAIDemo />
+      <TeamLaptopAI />
       <OnPhoneModels onOpenSetup={onOpenSetup} />
       <CloudGoneCard />
 

@@ -23,6 +23,8 @@ export interface Settings {
   stayAddress: string;
   /** Trip budget; expenses dated inside the trip count against it. */
   trip: TripPlan | null;
+  /** "auto": Gemini Nano on this phone, else the team laptop. "laptop": always the team laptop. */
+  aiEngine: "auto" | "laptop";
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -36,6 +38,7 @@ const DEFAULT_SETTINGS: Settings = {
   stayName: "",
   stayAddress: "",
   trip: null,
+  aiEngine: "auto",
 };
 
 interface Store {

@@ -558,7 +558,10 @@ Traveler: ${english}`;
  * English, and is not chatter or an echo of the English. Otherwise the app falls back to ML Kit.
  */
 export function acceptTranslation(english: string, output: string, target: NanoLang): string | null {
-  const t = firstLine(output);
+  // Larger models often add a romanization: "カードで支払えますか？ (Kādo de shiharaiemasu ka?)".
+  const t = firstLine(output)
+    .replace(/\s*[(（][^()（）]*\p{Script=Latin}[^()（）]*[)）]\s*$/u, "")
+    .trim();
   const l = NANO_LANG[target];
   if (!t || t.length > english.length * 2 + 20) return null;
   if (!l.script.test(t) || (l.foreign && l.foreign.test(t))) return null;

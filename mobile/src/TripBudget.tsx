@@ -4,7 +4,7 @@ import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-nativ
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Card, Chip, H2, InsightCard, Muted, Pill, styles } from "./components";
 import { phoneTripTips } from "./nanoEngine";
-import { useNano } from "./nanoStore";
+import { useLocalAI } from "./localAI";
 import { translateTexts } from "./onDevice";
 import {
   acceptTripTips,
@@ -35,7 +35,7 @@ const isSampleTx = (id: string) => id.startsWith("sample-trip-");
  */
 export function TripCard({ compact }: { compact?: boolean }) {
   const { data, settings, setSettings, update } = useStore();
-  const nano = useNano();
+  const ai = useLocalAI();
   const [editing, setEditing] = useState(false);
   const [aiTips, setAiTips] = useState<{ tips: string[]; dropped: number; ms: number } | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
@@ -145,11 +145,11 @@ export function TripCard({ compact }: { compact?: boolean }) {
         ))}
       </View>
 
-      {!compact && nano.status === "available" && status.phase !== "before" ? (
+      {!compact && ai.available && status.phase !== "before" ? (
         <View style={{ marginTop: S.xs }}>
           {aiTips ? (
             <View style={{ padding: S.md, borderRadius: 12, borderWidth: 1, borderColor: C.border, gap: S.sm }}>
-              <Text style={{ fontSize: 13, fontWeight: "800", color: C.brandStrong }}>✨ Gemini Nano · {(aiTips.ms / 1000).toFixed(1)}s on this phone</Text>
+              <Text style={{ fontSize: 13, fontWeight: "800", color: C.brandStrong }}>✨ {ai.name} · {(aiTips.ms / 1000).toFixed(1)}s {ai.where}</Text>
               {aiTips.tips.length ? (
                 aiTips.tips.map((t) => (
                   <Text key={t} style={{ fontSize: 15, color: C.text, lineHeight: 21 }}>
@@ -166,7 +166,7 @@ export function TripCard({ compact }: { compact?: boolean }) {
               </Muted>
             </View>
           ) : (
-            <Button label="✨ Tips from Gemini Nano (on this phone)" variant="secondary" onPress={askNano} busy={aiBusy} />
+            <Button label={`✨ Tips from ${ai.name} (${ai.where})`} variant="secondary" onPress={askNano} busy={aiBusy} />
           )}
           {aiError ? <Muted style={{ marginTop: S.xs }}>{aiError}</Muted> : null}
         </View>

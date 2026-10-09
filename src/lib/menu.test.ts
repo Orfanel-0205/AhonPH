@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { menuPrompt, parseMenuReading } from "./menu";
+import { fixDishOcr, menuPrompt, parseMenuReading } from "./menu";
 
 describe("menu reading", () => {
   it("asks about the original text and its language", () => {
@@ -24,6 +24,12 @@ describe("menu reading", () => {
     expect(r.has(1)).toBe(false);
     expect(r.has(2)).toBe(false);
     expect(r.has(8)).toBe(false);
+  });
+
+  it("fixes 丼 read as 井 at the end of a dish name", () => {
+    expect(fixDishOcr("親子井")).toBe("親子丼");
+    expect(fixDishOcr("カツ井 大盛")).toBe("カツ丼 大盛");
+    expect(fixDishOcr("井上")).toBe("井上");
   });
 
   it("strips a copied format word", () => {

@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNetworkState } from "expo-network";
 import { useEffect, useState, type ComponentProps } from "react";
-import { ActivityIndicator, Image, Text, View } from "react-native";
-import { Button, Card, Chip, H2, Muted, Pill } from "../components";
+import { ActivityIndicator, Image, Text, TextInput, View } from "react-native";
+import { Button, Card, Chip, H2, Muted, Pill, styles } from "../components";
 import { phoneQuickLog, phoneRead, phoneReadMenu, phoneTranslate, phoneTripTips } from "../nanoEngine";
+import { normalizeHubUrl } from "../hub";
+import { refreshHubAI, useHubAI, useLocalAI } from "../localAI";
 import { useNano } from "../nanoStore";
 import { recognizeText } from "../native";
 import { appNetworkBytes, demoImage, detectLanguage, downloadedLanguages, translateTexts, TRAVELER_LANGUAGES } from "../onDevice";
@@ -30,12 +32,12 @@ interface StepView {
 const STEPS: { id: StepId; title: string; engine: string }[] = [
   { id: "ocr", title: "Read a Japanese receipt photo", engine: "ML Kit Text Recognition · Japanese model" },
   { id: "parse", title: "Itemize it and check the math", engine: "LakbayMate code · unit-tested" },
-  { id: "names", title: "Name each item in English", engine: "Gemini Nano (Android AICore)" },
+  { id: "names", title: "Name each item in English", engine: "{AI}" },
   { id: "lang", title: "Detect the language staff wrote", engine: "ML Kit Language ID" },
-  { id: "translate", title: "Understand what staff said", engine: "ML Kit Translation, then Gemini Nano" },
-  { id: "say", title: "Answer like a local", engine: "Gemini Nano + code check + back-translation" },
-  { id: "log", title: "Understand spending, no receipt", engine: "Gemini Nano + code check" },
-  { id: "tip", title: "Budget tip with checked numbers", engine: "Gemini Nano + code check" },
+  { id: "translate", title: "Understand what staff said", engine: "ML Kit Translation, then {AI}" },
+  { id: "say", title: "Answer like a local", engine: "{AI} + code check + back-translation" },
+  { id: "log", title: "Understand spending, no receipt", engine: "{AI} + code check" },
+  { id: "tip", title: "Budget tip with checked numbers", engine: "{AI} + code check" },
   { id: "voice", title: "Say the answer out loud", engine: "Android text-to-speech · offline voice" },
 ];
 
@@ -55,7 +57,7 @@ const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
  * reports how many bytes this app actually sent or received meanwhile (Android TrafficStats).
  */
 export function OfflineAIDemo() {
-  const nano = useNano();
+  const ai = useLocalAI();
   const net = useNetworkState();
   const [views, setViews] = useState<Partial<Record<StepId, StepView>>>({});
   const [running, setRunning] = useState(false);
@@ -92,8 +94,9 @@ export function OfflineAIDemo() {
     const startOffline = offline;
     const before = appNetworkBytes();
     const t0 = Date.now();
-    const hasNano = nano.status === "available";
-    const noNano = { lines: [], skipped: true, note: "Gemini Nano isn't on this phone; LakbayMate falls back to ML Kit, the phrasebook and code." };
+    const hasNano = ai.available;
+    const aiName = ai.name;
+    const noNano = { lines: [], skipped: true, note: "No local AI model here (no Gemini Nano, no team laptop); LakbayMate falls back to ML Kit, the phrasebook and code." };
     const packs = await downloadedLanguages();
     let ok = 0;
     let rows: string[] = [];
@@ -159,11 +162,11 @@ export function OfflineAIDemo() {
         const quick = `ML Kit, ${r.ms} ms: ${r.texts[0]}`;
         if (!hasNano) return { lines: [quick] };
         // The word-for-word offline translator is instant; Gemini Nano then reads it the way a person would.
-        update([quick, "✨ Gemini Nano is reading it…"]);
+        update([quick, `✨ ${aiName} is reading it…`]);
         const t = Date.now();
         const natural = await phoneRead(STAFF_LINE, "ja", "restaurant");
         return {
-          lines: [quick, natural ? `✨ Gemini Nano, ${((Date.now() - t) / 1000).toFixed(1)} s: ${natural}` : "✨ Gemini Nano's reading failed the check; ML Kit's stays."],
+          lines: [quick, natural ? `✨ ${aiName}, ${((Date.now() - t) / 1000).toFixed(1)} s: ${natural}` : `✨ ${aiName}'s reading failed the check; ML Kit's stays.`],
           note: natural ? "Checked: plain English, every number kept." : undefined,
         };
       })
@@ -176,9 +179,9 @@ export function OfflineAIDemo() {
         let note = "✓ Code check: Japanese script, every number kept, no chatter.";
         let ja = hasNano ? await phoneTranslate(MY_LINE, "ja", "restaurant") : null;
         if (!ja) {
-          if (!packs.includes("ja")) return hasNano ? { lines: [], note: "Gemini Nano's answer failed the check and no Japanese pack is installed.", skipped: true } : noNano;
+          if (!packs.includes("ja")) return hasNano ? { lines: [], note: `${aiName}'s answer failed the check and no Japanese pack is installed.`, skipped: true } : noNano;
           ja = (await translateTexts([MY_LINE], "en", "ja")).texts[0];
-          note = hasNano ? "Gemini Nano's answer failed the check, so ML Kit translated it." : "Translated by ML Kit (Gemini Nano isn't on this phone).";
+          note = hasNano ? `${aiName}'s answer failed the check, so ML Kit translated it.` : "Translated by ML Kit (no local AI model here).";
         }
         jaAnswer = ja;
         const back = packs.includes("ja") ? (await translateTexts([ja], "ja", "en")).texts[0] : null;
@@ -193,7 +196,7 @@ export function OfflineAIDemo() {
         if (!hasNano) return noNano;
         const r = await phoneQuickLog(SPENDING, todayISO());
         const recs = applyCurrency(r.records, SPENDING, "JPY");
-        if (!recs.length) throw new Error("Gemini Nano found no spending in the sentence.");
+        if (!recs.length) throw new Error(`${aiName} found no spending in the sentence.`);
         return {
           lines: [`“${SPENDING}”`, ...recs.map((x) => `${x.description} → −${formatPeso(roundToPeso(x.amountCentavos))}`)],
           note: "Amounts are checked against what was typed. Not saved.",
@@ -276,7 +279,7 @@ export function OfflineAIDemo() {
                       <Text style={{ fontSize: 13, fontWeight: "700", color: C.brandStrong, fontVariant: ["tabular-nums"] }}>{v.ms < 1000 ? `${v.ms} ms` : `${(v.ms / 1000).toFixed(1)} s`}</Text>
                     ) : null}
                   </View>
-                  <Text style={{ fontSize: 12, color: C.muted }}>{s.engine}</Text>
+                  <Text style={{ fontSize: 12, color: C.muted }}>{s.engine.replace("{AI}", ai.kind === "hub" ? `${ai.name} (team laptop)` : "Gemini Nano (Android AICore)")}</Text>
                   {v.lines.map((l, j) => (
                     <Text key={j} style={{ fontSize: 14, color: C.text, marginTop: 2 }}>
                       {l}
@@ -303,9 +306,73 @@ export function OfflineAIDemo() {
               Network used by LakbayMate meanwhile: {summary.bytes.sent.toLocaleString()} bytes sent · {summary.bytes.received.toLocaleString()} bytes received
             </Text>
           ) : null}
-          <Muted>Measured by Android (TrafficStats) for this app. Gemini Nano runs in Android&apos;s AICore on this phone.</Muted>
+          <Muted>
+            Measured by Android (TrafficStats) for this app.{" "}
+            {ai.kind === "hub"
+              ? `${ai.name} answered on your laptop over local Wi-Fi, so that local traffic is counted above; nothing went to the internet.`
+              : "Gemini Nano runs in Android's AICore on this phone."}
+          </Muted>
         </View>
       ) : null}
+    </Card>
+  );
+}
+
+/**
+ * Team laptop AI: a phone without Gemini Nano (or any teammate's phone) borrows the laptop's model over
+ * the laptop's hotspot or the same Wi-Fi. No internet; the same prompts and checks.
+ */
+export function TeamLaptopAI() {
+  const { settings, setSettings } = useStore();
+  const hub = useHubAI();
+  const nano = useNano();
+  const [address, setAddress] = useState(settings.hubUrl);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function connect() {
+    const url = normalizeHubUrl(address);
+    if (!url) return;
+    setBusy(true);
+    setMsg(null);
+    const ok = await refreshHubAI(url);
+    setBusy(false);
+    if (ok) setSettings({ hubUrl: url });
+    else setMsg("Can't reach the laptop. Join its hotspot (or the same Wi-Fi), start the hub, and check the address it shows.");
+  }
+
+  return (
+    <Card>
+      <H2>Team laptop AI</H2>
+      <Muted style={{ marginBottom: S.sm }}>
+        No Gemini Nano on your phone? Join the team laptop&apos;s hotspot and connect. Every AI feature then runs on the laptop&apos;s own model, with the same
+        checks. No internet is used.
+      </Muted>
+      <Pill
+        label={hub.reachable ? `Connected · ${hub.model ?? "laptop model"} at ${hub.url?.replace(/^https?:\/\//, "")}` : "Not connected"}
+        tone={hub.reachable ? "good" : "info"}
+        icon={hub.reachable ? "laptop" : "laptop-outline"}
+      />
+      <View style={{ flexDirection: "row", gap: S.sm, marginTop: S.sm, alignItems: "center" }}>
+        <TextInput
+          value={address}
+          onChangeText={setAddress}
+          placeholder="192.168.137.1:3000"
+          autoCapitalize="none"
+          keyboardType="url"
+          style={[styles.input, { flex: 1 }]}
+          accessibilityLabel="Laptop hub address"
+        />
+        <View style={{ width: 120 }}>
+          <Button label="Connect" icon="link" variant="secondary" onPress={connect} busy={busy} />
+        </View>
+      </View>
+      {msg ? <Text style={{ fontSize: 13, color: C.danger, marginTop: 4 }}>{msg}</Text> : null}
+      <Text style={{ fontSize: 14, fontWeight: "700", color: C.text, marginTop: S.md, marginBottom: S.xs }}>Which AI answers</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: S.sm }}>
+        <Chip label={nano.status === "available" ? "Auto · Gemini Nano first" : "Auto"} selected={settings.aiEngine === "auto"} onPress={() => setSettings({ aiEngine: "auto" })} />
+        <Chip label="Team laptop" selected={settings.aiEngine === "laptop"} onPress={() => setSettings({ aiEngine: "laptop" })} />
+      </View>
     </Card>
   );
 }

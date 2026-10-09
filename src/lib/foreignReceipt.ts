@@ -1,3 +1,5 @@
+import { fixDishOcr } from "./menu";
+
 /**
  * Receipts abroad (Japan, Korea, China, Taiwan, Hong Kong). They differ from Philippine receipts:
  * whole-yen/won amounts, labels like 合計 / 합계 / 合计, tax-type marks like (外10店), and items
@@ -54,10 +56,12 @@ function amounts(row: string, wholeNumbers: boolean): number[] {
 
 const letters = (s: string) => (s.match(/\p{L}/gu) ?? []).length;
 const cleanName = (s: string) =>
-  s
-    .replace(TAX_MARK, "")
-    .replace(/[\s:：.…\-]+$/u, "")
-    .trim();
+  fixDishOcr(
+    s
+      .replace(TAX_MARK, "")
+      .replace(/[\s:：.…\-]+$/u, "")
+      .trim(),
+  );
 
 /** "unit qty total" when unit × qty = total; otherwise the last number is the line total. */
 function itemNumbers(nums: number[]): { quantity: number; unit: number | null; total: number } | null {

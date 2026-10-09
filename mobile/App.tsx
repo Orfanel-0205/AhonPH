@@ -4,7 +4,8 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState, type ComponentProps } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { refreshNano } from "./src/nanoStore";
+import { refreshHubAI, setNanoReady, setPreferHub } from "./src/localAI";
+import { refreshNano, useNano } from "./src/nanoStore";
 import { onSharedText } from "./src/onDevice";
 import { AskScreen } from "./src/screens/AskScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
@@ -46,6 +47,14 @@ function Shell() {
   const [tab, setTab] = useState<Tab>("home");
   const [setupOpen, setSetupOpen] = useState(false);
   const [shared, setShared] = useState<string | null>(null);
+  const nano = useNano();
+
+  // The AI router: Gemini Nano when this phone has it, else the team laptop over local Wi-Fi.
+  useEffect(() => setNanoReady(nano.status === "available"), [nano.status]);
+  useEffect(() => {
+    refreshHubAI(settings.hubUrl || null);
+  }, [settings.hubUrl]);
+  useEffect(() => setPreferHub(settings.aiEngine === "laptop"), [settings.aiEngine]);
 
   useEffect(() => {
     refreshNano();

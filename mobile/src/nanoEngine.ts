@@ -1,8 +1,9 @@
 /**
- * LakbayMate's language AI on the phone itself: Gemini Nano (built into Android).
- * Same prompts and the same code checks as the laptop hub; only the model differs.
+ * LakbayMate's language AI: Gemini Nano on the phone, or the team laptop's model when the phone has none
+ * (see localAI.ts). Same prompts and the same code checks either way; only the model differs.
  */
-import { nanoGenerate, OnDevice } from "./onDevice";
+import { generate } from "./localAI";
+import { OnDevice } from "./onDevice";
 import { acceptPolish, acceptReading, acceptTranslation, acceptTripTips, ADVISOR_SYSTEM_PROMPT, advisorUserMessage, COMPACT_RECEIPT_PROMPT, EXPENSE_CATEGORIES, INCOME_CATEGORIES, menuPrompt, normalizeQuickLog, parseCompactReceipt, parseMenuReading, parseSuggestions, polishPrompt, quickLogSystemPrompt, readPrompt, refineWithLocalKnowledge, translatePrompt, tripTipPrompt, type MenuReading, type NanoLang, type ParsedRecord, type Scenario } from "./shared";
 
 export const NANO_LABEL = "Gemini Nano (on-device)";
@@ -44,10 +45,10 @@ function extractJson(text: string): unknown {
 
 /** `records` include the local-knowledge refinement; `raw` is the model's answer after validation only. */
 export async function phoneQuickLog(text: string, today: string): Promise<{ records: ParsedRecord[]; raw: ParsedRecord[]; ms: number }> {
-  let r: Awaited<ReturnType<typeof nanoGenerate>>;
+  let r: Awaited<ReturnType<typeof generate>>;
   try {
     r = await withOneRetry(() =>
-      nanoGenerate(`${quickLogSystemPrompt()}\n\n${JSON_SHAPE}\n\nMessage: ${text}`, { temperature: 0, maxOutputTokens: MAX_OUTPUT_TOKENS }),
+      generate(`${quickLogSystemPrompt()}\n\n${JSON_SHAPE}\n\nMessage: ${text}`, { temperature: 0, maxOutputTokens: MAX_OUTPUT_TOKENS }),
     );
   } catch (e) {
     throw friendly(e);
@@ -77,10 +78,10 @@ export async function phoneAdvise(
     .map((t) => `${t.role === "user" ? "User" : "LakbayMate"}: ${t.content.slice(0, 600)}`)
     .join("\n");
   const prompt = `${ADVISOR_SYSTEM_PROMPT}\n\n${transcript ? `Earlier conversation:\n${transcript}\n\n` : ""}${advisorUserMessage(context, question)}`;
-  let r: Awaited<ReturnType<typeof nanoGenerate>>;
+  let r: Awaited<ReturnType<typeof generate>>;
   try {
     r = await withOneRetry(() =>
-      nanoGenerate(prompt, {
+      generate(prompt, {
         temperature: 0.3,
         maxOutputTokens: MAX_OUTPUT_TOKENS,
         onText,
@@ -108,7 +109,7 @@ export async function phoneReadReceipt(uri: string): Promise<ReturnType<typeof p
 /** Three reply ideas from Gemini Nano on the phone; an empty list means "use the phrase bank". */
 export async function phoneSuggestReplies(prompt: string): Promise<string[]> {
   try {
-    const r = await withOneRetry(() => nanoGenerate(prompt, { temperature: 0.4, maxOutputTokens: 120 }));
+    const r = await withOneRetry(() => generate(prompt, { temperature: 0.4, maxOutputTokens: 120 }));
     return parseSuggestions(r.text);
   } catch {
     return [];
@@ -119,7 +120,7 @@ export async function phoneSuggestReplies(prompt: string): Promise<string[]> {
 export async function phonePolish(english: string, scenario: Scenario): Promise<string | null> {
   try {
     const r = await withOneRetry(() =>
-      nanoGenerate(polishPrompt(english, scenario), {
+      generate(polishPrompt(english, scenario), {
         temperature: 0,
         maxOutputTokens: 80,
       }),
@@ -135,9 +136,9 @@ export async function phonePolish(english: string, scenario: Scenario): Promise<
  * those facts is dropped, so the AI can phrase advice but cannot make up numbers.
  */
 export async function phoneTripTips(facts: string): Promise<{ tips: string[]; dropped: number; ms: number }> {
-  let r: Awaited<ReturnType<typeof nanoGenerate>>;
+  let r: Awaited<ReturnType<typeof generate>>;
   try {
-    r = await withOneRetry(() => nanoGenerate(tripTipPrompt(facts), { temperature: 0.4, maxOutputTokens: 160 }));
+    r = await withOneRetry(() => generate(tripTipPrompt(facts), { temperature: 0.4, maxOutputTokens: 160 }));
   } catch (e) {
     throw friendly(e);
   }
@@ -148,7 +149,7 @@ export async function phoneTripTips(facts: string): Promise<{ tips: string[]; dr
 export async function phoneTranslate(english: string, target: NanoLang, scenario: Scenario): Promise<string | null> {
   try {
     const r = await withOneRetry(() =>
-      nanoGenerate(translatePrompt(english, target, scenario), {
+      generate(translatePrompt(english, target, scenario), {
         temperature: 0,
         maxOutputTokens: 120,
       }),
@@ -163,7 +164,7 @@ export async function phoneTranslate(english: string, target: NanoLang, scenario
 export async function phoneRead(text: string, from: NanoLang, scenario: Scenario): Promise<string | null> {
   try {
     const r = await withOneRetry(() =>
-      nanoGenerate(readPrompt(text, from, scenario), {
+      generate(readPrompt(text, from, scenario), {
         temperature: 0,
         maxOutputTokens: 160,
       }),
@@ -184,11 +185,11 @@ export async function phoneReadMenu(
   onPartial?: (readings: Map<number, MenuReading>) => void,
 ): Promise<{ readings: Map<number, MenuReading>; ms: number }> {
   if (!lines.length) return { readings: new Map(), ms: 0 };
-  let r: Awaited<ReturnType<typeof nanoGenerate>>;
+  let r: Awaited<ReturnType<typeof generate>>;
   // Streams: each dish shows up as soon as Gemini Nano has written its line.
   const onText = onPartial && ((soFar: string) => onPartial(parseMenuReading(soFar.slice(0, soFar.lastIndexOf("\n") + 1), lines.length)));
   try {
-    r = await withOneRetry(() => nanoGenerate(menuPrompt(lines, lang), { temperature: 0.1, maxOutputTokens: MAX_OUTPUT_TOKENS, onText }));
+    r = await withOneRetry(() => generate(menuPrompt(lines, lang), { temperature: 0.1, maxOutputTokens: MAX_OUTPUT_TOKENS, onText }));
   } catch (e) {
     throw friendly(e);
   }
