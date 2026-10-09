@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useNetworkState } from "expo-network";
+import { useEffect, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { Button, Card, H2, Muted, Pill, styles } from "../components";
 import { phoneQuickLog } from "../nanoEngine";
 import { useNano } from "../nanoStore";
-import { buildSampleData, ECON_FACTS, formatDate, FX, QUICKLOG_CASES, QUICKLOG_FINAL, QUICKLOG_HOLDOUT, scoreQuickLog, todayISO, type ParsedRecord, type QuickLogCase } from "../shared";
+import { downloadedLanguages, TRAVELER_LANGUAGES } from "../onDevice";
+import { buildSampleData, ECON_FACTS, formatDate, formatPeso, FX, QUICKLOG_CASES, QUICKLOG_FINAL, QUICKLOG_HOLDOUT, scoreQuickLog, todayISO, type ParsedRecord, type QuickLogCase } from "../shared";
 import { EMPTY_DATA, useStore } from "../store";
 import { C, S } from "../theme";
 
@@ -123,6 +125,46 @@ function OnDeviceTest() {
   );
 }
 
+function Check({ ok, label, note }: { ok: boolean; label: string; note: string }) {
+  return (
+    <View style={{ flexDirection: "row", gap: S.sm, paddingVertical: 6 }}>
+      <Text style={{ fontSize: 16, color: ok ? C.good : C.muted, width: 20 }}>{ok ? "✓" : "–"}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 14, fontWeight: "600", color: C.text }}>{label}</Text>
+        <Muted>{note}</Muted>
+      </View>
+    </View>
+  );
+}
+
+/** Live proof for the demo: with the network off, everything that matters still works. */
+function CloudGoneCard() {
+  const net = useNetworkState();
+  const nano = useNano();
+  const { data } = useStore();
+  const [langs, setLangs] = useState<string[]>([]);
+  useEffect(() => {
+    downloadedLanguages().then(setLangs);
+  }, []);
+  const offline = net.isConnected === false || net.isInternetReachable === false;
+  const tracked = data.transactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amountCentavos, 0);
+  const langNames = TRAVELER_LANGUAGES.filter((l) => l.code !== "en" && langs.includes(l.code)).map((l) => l.label);
+  return (
+    <Card style={{ borderColor: offline ? C.good : C.border, borderWidth: offline ? 2 : 1 }}>
+      <H2>If the cloud disappears</H2>
+      <Pill label={offline ? "Right now: offline — and still working" : "Right now: online (KitaPH doesn't need it)"} tone={offline ? "good" : "info"} icon={offline ? "airplane" : "wifi"} />
+      <View style={{ marginTop: S.sm }}>
+        <Check ok label="Scan receipts, breakdown, tips, Presyo" note="ML Kit text recognition + KitaPH code, on this phone" />
+        <Check ok={nano.status === "available"} label="Taglish logging and Kita AI" note={nano.status === "available" ? "Gemini Nano, built into Android, on this phone" : "Needs the one-time Gemini Nano setup (or basic mode)"} />
+        <Check ok={langNames.length > 0} label="Traveler translation" note={langNames.length ? `Offline packs: Filipino, English, ${langNames.join(", ")}` : "English only until a language pack is downloaded"} />
+      </View>
+      <Muted style={{ marginTop: S.sm }}>
+        Kept only on this phone: {data.receipts.length} receipts · {data.transactions.length} records · {formatPeso(tracked)} of spending. Nothing is uploaded.
+      </Muted>
+    </Card>
+  );
+}
+
 export function PrivacyScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
   const { data, update } = useStore();
   const nano = useNano();
@@ -137,6 +179,8 @@ export function PrivacyScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
     <ScrollView contentContainerStyle={styles.screen}>
       <Text style={styles.title}>Privacy</Text>
       <Muted style={{ marginBottom: S.md }}>Your receipts and finances stay on this phone. Here is exactly what runs where.</Muted>
+
+      <CloudGoneCard />
 
       <Card>
         <H2>On this phone (works offline)</H2>

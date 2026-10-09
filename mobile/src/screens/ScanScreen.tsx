@@ -41,6 +41,8 @@ export function ScanScreen({ onSaved }: { onSaved: () => void }) {
   const [mode, setMode] = useState<Mode>("worker");
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
+  /** Size of the photo a cloud OCR service would have needed; KitaPH uploads none of it. */
+  const [photoBytes, setPhotoBytes] = useState<number | null>(null);
   const [ocr, setOcr] = useState<OcrResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +63,8 @@ export function ScanScreen({ onSaved }: { onSaved: () => void }) {
       setImageUri(uri);
       // Kept only in memory, for the optional hub double-check over local Wi-Fi.
       setImageBase64(res.assets[0].base64 ?? null);
+      const b64 = res.assets[0].base64;
+      setPhotoBytes(res.assets[0].fileSize ?? (b64 ? Math.round((b64.length * 3) / 4) : null));
       setOcr(null);
       setBusy(true);
       const result = await recognizeText(uri);
@@ -76,6 +80,7 @@ export function ScanScreen({ onSaved }: { onSaved: () => void }) {
   function reset() {
     setImageUri(null);
     setImageBase64(null);
+    setPhotoBytes(null);
     setOcr(null);
     setError(null);
   }
@@ -104,6 +109,9 @@ export function ScanScreen({ onSaved }: { onSaved: () => void }) {
             <View style={{ flex: 1, gap: 6 }}>
               {busy ? <Pill label="Reading on this phone…" icon="hourglass" /> : null}
               {ocr ? <Pill label={`Read on-device in ${(ocr.ms / 1000).toFixed(1)}s · ML Kit`} tone="good" icon="phone-portrait" /> : null}
+              {ocr && photoBytes ? (
+                <Pill label={`0 bytes sent · cloud OCR would need this ${(photoBytes / 1e6).toFixed(1)} MB photo`} tone="good" icon="cloud-offline" />
+              ) : null}
               <Button label="Scan another" icon="refresh" variant="ghost" onPress={reset} />
             </View>
           </View>

@@ -213,3 +213,21 @@ describe("real-world robustness", () => {
     expect(r.check.status).toBe("ok");
   });
 });
+
+describe("real phone OCR (captured from ML Kit on a POCO X7 Pro)", async () => {
+  const fx = (await import("./fixtures/ocr-puregold-test-phone.json")).default as unknown as OcrLine[];
+  it("reads the printed Puregold test receipt despite OCR slips (SKG, 102.0e, 1000.0)", () => {
+    const r = parseOcrReceipt(fx, today)!;
+    expect(r.merchant).toBe("PUREGOLD PRICE CLUB");
+    expect(r.date).toBe("2026-10-09");
+    expect(r.items.map((i) => [i.quantity, i.lineTotalCentavos])).toEqual([
+      [1, 24500],
+      [6, 9900],
+      [2, 7750],
+      [3, 10200],
+      [1, 5225],
+    ]);
+    expect(r.totalCentavos).toBe(57575);
+    expect(r.check.status).toBe("ok");
+  });
+});
