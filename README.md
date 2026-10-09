@@ -71,12 +71,25 @@ If a phone can't run Gemini Nano, LakbayMate falls back to ML Kit translation, t
 - Gemini Nano's Japanese/Korean/Chinese is used only if it is one line, in the right script, keeps every number from the English, and isn't an English answer or chatter; otherwise ML Kit translates. Every reply is translated back so the traveler can check the meaning.
 - Its English reading of what the other person said must keep every number and contain no Japanese/Korean/Chinese.
 - Trip tips: Gemini Nano sees only the computed facts, and a tip that uses any amount not in those facts is dropped (the screen says how many).
+- **Known facts beat AI guesses.** 70 hand-checked dishes and drinks (Japan, Korea, China/Taiwan/HK) are looked up before any AI: their English name, note and what they contain (pork, beef, chicken, seafood, egg, alcohol, peanut) are facts, marked ✓. The AI only names dishes that aren't on the list (`src/lib/dishes.ts`).
+- **Two readers for bill splits.** A rule reader for Taglish/English ("kay Maria ang…", "akin ang…", "hati kaming lahat sa…", "libre ko", "the rest…") and the AI read the sentence independently. Agreement is shown as ✓; on disagreement the rule reading is kept and the item is flagged ⚠ for the user. With no AI at all, the rules still work.
+- **No AI call can hang the app:** every Gemini Nano call times out after 30 s and the offline fallback takes over.
 - Menu readings that are hedged ("not sure") or just repeat the original are dropped; ML Kit's translation stays for those lines.
 - Receipt items must add up to the printed TOTAL; a known misread (unit price taken as line total) is detected and repaired.
 - Every amount the quick-log extracts is checked against what the user typed, and nothing is saved until the user confirms.
 - Every peso amount and percentage in an advisor answer is checked against the data the model was given; anything else is flagged on screen.
 
 ## Measured results (reproducible; no other numbers are claimed)
+
+**Bill split (who had what).** Two sets in `src/lib/evalSplit.ts`, written by us on Oct 10: 12 development sentences, and 8 held-out sentences committed at 04:14, before the rule reader was tuned. Several are hard on purpose ("lahat ng beer", "except", "libre ko na lahat"). A sentence counts only if all 5 items go to the right people. Reproduce with `npx tsx scripts/eval-split.mts http://localhost:3000 <dev|holdout>` (the AI is the hub's Gemma 3 4B; Gemini Nano was not run on these sets).
+
+| Reader | Development (12) | Held-out (8) |
+|---|---|---|
+| Rules only | 11/12 (5/12 before tuning) | 5/8 |
+| Gemma 3 4B only | 9/12 | 5/8 |
+| **Rules + AI, cross-checked** | **11/12**, the miss flagged | **5/8**, all 3 misses flagged (4/8 at its first scoring, before the "the rest" fix found on the development set) |
+
+Across all 100 items, **no wrong item was ever shown as ✓ checked**: every error was either flagged ⚠ or the reader didn't claim it. Small sets written by us; treat as indicative.
 
 **Taglish quick-log.** Three sets of 15 sentences in `src/lib/`, each worded differently from the prompt's examples. A sentence counts only if every record's type, category and amount is right.
 
@@ -109,11 +122,12 @@ Caveats: we wrote all sentences ourselves; the "pinadala" family rule in `src/li
 - Oct 10, ~2:47 AM and ~2:52 AM, **AI Lab, airplane mode with Wi-Fi off**: 9 of 9 steps in 30.0 s and in 28.2 s. Android TrafficStats reported **0 bytes sent and 0 bytes received** by the app during both runs. Japanese OCR of the bundled sample receipt: 244–302 ms. Language ID: 8–18 ms. ML Kit translation: about 200 ms ("Please give me your accounting by cash register"); Gemini Nano's reading of the same line: 1.8–1.9 s ("Please pay at the register. Credit cards are accepted."). Gemini Nano Japanese answer: 1.2 s (カードで支払えますか?). Naming 5 items: 8.3–8.8 s. Taglish spending: 8.0 s. Budget tip: 6.8–8.0 s. On that sample photo the OCR read the large "¥4,895" as "44,895"; the receipt check corrected it because ¥4,895 = 小計 + 消費税, and the screen says so.
 - Oct 10, ~3:38–3:58 AM, **team laptop AI** (phone connected to the laptop hub over USB port forwarding, standing in for the laptop's hotspot): AI Lab 9 of 9 steps in 9.6 s, then 10 of 10 (with the bill split) in 9.7 s and 11.2 s, all through Gemma 3 4B on an RTX 4050 laptop. Back on Gemini Nano: 10 of 10 in 30.3 s and 31.0 s.
 - **Bill split.** First prompt: Gemma 3 4B misassigned the sample sentence (3 of 5). After we asked the model to name each item in plain English before assigning it, Gemma got all 5 right (Ako ¥1,191 · Maria ¥1,577 · Jun ¥2,127, the hand-computed split). On the harder sentence ("isang beer" each for two people), Gemini Nano gave the beer to Maria only; on the simpler sentence now used in the AI Lab it assigned every item correctly (Ako ¥1,632 · Maria ¥1,357 · Jun ¥1,906), in 4.5 s on the Split screen. Assignments can always be fixed with a tap.
-- Known slips: Gemini Nano once described 親子井 (an OCR misreading of 親子丼, chicken and egg) as "steamed eggs with pork". After the 丼 fix it called 親子丼 "chicken and pork rice bowl" (there is no pork) and 枝豆 "green beans" (they are soybeans). That is why every menu reading carries an "ask the staff if you have allergies or avoid pork" note.
+- After the hand-checked dish list, the AI Lab names all 5 sample dishes correctly with what they contain (✓ Oyakodon: chicken, egg), and on the harder "isang beer" sentence the rules caught Gemini Nano's beer mistake on the phone ("⚠ AI differed, rules kept"), giving the correct split.
+- Known slips (before the dish list): Gemini Nano once described 親子井 (an OCR misreading of 親子丼, chicken and egg) as "steamed eggs with pork". After the 丼 fix it called 親子丼 "chicken and pork rice bowl" (there is no pork) and 枝豆 "green beans" (they are soybeans). That is why every menu reading carries an "ask the staff if you have allergies or avoid pork" note.
 
 Japanese quality was judged by our team, not formally evaluated. The hand-written Japanese, Korean and Chinese phrases are in `src/lib/talk.ts` for anyone to check.
 
-**Other checks.** Receipt vision with Qwen3-VL 2B on the hub read 1 synthetic receipt exactly (one generated image only). The on-device receipt reader is unit-tested on hand-built OCR layouts and one real phone OCR fixture; accuracy on real receipts has not been measured. Unit tests: `npm test` (133) and `cd cloud && pytest` (5).
+**Other checks.** Receipt vision with Qwen3-VL 2B on the hub read 1 synthetic receipt exactly (one generated image only). The on-device receipt reader is unit-tested on hand-built OCR layouts and one real phone OCR fixture; accuracy on real receipts has not been measured. Unit tests: `npm test` (146) and `cd cloud && pytest` (5).
 
 ## Running it
 

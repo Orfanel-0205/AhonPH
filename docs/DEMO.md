@@ -54,6 +54,8 @@
 
 **Why not just use Google Translate offline?** It translates; it doesn't hold the conversation with you. LakbayMate reads what was said, suggests what to answer, checks your answer by translating it back, reads menus into dish names in pesos, and keeps your trip budget live, all offline and in one place, built for Filipinos.
 
+**How reliable is the AI?** "Facts first, AI second, and the AI is always checked." Known dishes come from a hand-checked list. For bill splits, a rule reader and the AI read the sentence separately: on 20 test sentences, when LakbayMate showed ✓ it was right every time, and every mistake was flagged for the user. Money is always computed by tested code.
+
 **How do you stop the AI from making things up?** The AI proposes and code checks. Japanese from Gemini Nano must be in Japanese script and keep every number, or we use ML Kit. Budget tips can only use amounts the code computed; others are dropped. Receipts must add up to the printed total. Money is computed by tested code, never by the model.
 
 **What if a phone can't run Gemini Nano?** Translation (ML Kit), speech, scanning, pesos and the trip budget still work. Reply bubbles come from the phrasebook, tips come from code, and spending logs use keyword rules (9 of 15 on our final test set without any AI).

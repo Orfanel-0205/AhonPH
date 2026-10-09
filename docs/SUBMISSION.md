@@ -55,6 +55,8 @@ Taglish quick-log, three sets of 15 sentences (dev; held-out committed before tu
 - Gemma 3 4B on the laptop hub: dev 15 → 15, held-out 12 → 14, **final 14 → 14 of 15**; median 2.1 s.
 - Basic mode (no AI): dev 11, held-out 7, final 9 of 15.
 
+Bill split, who had what (12 development + 8 held-out sentences, held-out committed before tuning): rules + AI cross-checked got 11/12 and 5/8 sentences fully right, every miss was flagged for the user, and no wrong item was ever shown as checked (Gemma 3 4B via the laptop hub; Gemini Nano not run on these sets).
+
 Observed on the phone (single runs, not benchmarks): the AI Lab ran 10 of 10 AI steps in 30.3–31.0 s on Gemini Nano and 9.7–11.2 s through the team laptop; earlier 9-step runs took 30.0 s and 28.2 s in airplane mode, with 0 bytes sent and received by the app (Android TrafficStats); Gemini Nano budget tips in 4.3 s and 4.6 s; Japanese OCR of a synthetic test menu in 0.2 s; Gemini Nano menu reading in 7.8–18.3 s over three runs. All test sentences were written by us; sets are small, so treat results as indicative. Details and caveats are in the README.
 
 ## Suggested post (X / LinkedIn)
