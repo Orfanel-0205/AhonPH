@@ -72,13 +72,38 @@ const REPLY_HINTS: { match: RegExp; reply: Phrase }[] = [
   { match: /how many|ilan|people|tao/i, reply: { tl: "Dalawa po kami.", en: "There are two of us." } },
   { match: /name|pangalan/i, reply: { tl: "Heto po ang pangalan ko.", en: "Here is my name." } },
   { match: /bag|receipt|resibo/i, reply: { tl: "Opo, salamat.", en: "Yes, please. Thank you." } },
-  { match: /\?|anything else|iba pa/i, reply: { tl: "Wala na po, salamat.", en: "That's all, thank you." } },
 ];
+
+/** Catch-all for questions; used only when no specific hint matches. */
+const GENERIC_QUESTION = { match: /\?|anything else|iba pa/i, reply: { tl: "Wala na po, salamat.", en: "That's all, thank you." } };
+REPLY_HINTS.push(GENERIC_QUESTION);
 
 const ALWAYS: Phrase[] = [
   { tl: "Salamat po!", en: "Thank you very much!" },
   { tl: "Pakiulit po, dahan-dahan lang.", en: "Could you say that again, slowly?" },
 ];
+
+/** Phrase-bank replies that directly answer what the other person said (e.g. a passport request). */
+export function hintReplies(lang: MeLang, theySaid: string): string[] {
+  const matched = REPLY_HINTS.filter((h) => h.match.test(theySaid));
+  // The catch-all question reply only helps when nothing more specific fits.
+  const specific = matched.filter((h) => h !== GENERIC_QUESTION);
+  return (specific.length ? specific : matched).slice(0, 2).map((h) => h.reply[lang]);
+}
+
+/** Merges reply ideas, keeping order and dropping near-duplicates; at most 3. */
+export function mergeReplies(...lists: string[][]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of lists.flat()) {
+    const key = r.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(r);
+    if (out.length === 3) break;
+  }
+  return out;
+}
 
 /** Up to 3 replies from the phrase bank, preferring ones that fit what the other person said. */
 export function phrasebookReplies(scenario: Scenario, lang: MeLang, theySaid: string | null): string[] {
@@ -103,6 +128,7 @@ export function suggestionPrompt(args: { scenario: Scenario; lang: MeLang; theyS
   return `You help a Filipino traveler reply during a conversation abroad. Situation: ${situation}.
 ${recent ? `Conversation so far (translated):\n${recent}\n` : ""}The other person just said (translated): "${args.theySaid}"
 Write exactly 3 short, polite replies the traveler could say next, in ${LANG_NAME[args.lang]}. Each under 12 words.
+Each reply must directly answer or respond to what the other person just said. Be cooperative; a traveler wants to get things done.
 One reply per line. No numbering, no quotes, no explanations.`;
 }
 

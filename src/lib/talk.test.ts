@@ -29,3 +29,22 @@ describe("Gemini Nano suggestions", () => {
     expect(parseSuggestions('Here are 3 replies:\n1. "Salamat po!"\n- Puwede po bang 12?\n• Okay po.\n4) Extra')).toEqual(["Salamat po!", "Puwede po bang 12?", "Okay po."]);
   });
 });
+
+describe("hint replies and merging", async () => {
+  const { hintReplies, mergeReplies } = await import("./talk");
+  it("answers a passport request first", () => {
+    expect(hintReplies("tl", "Maaari ko bang makita ang iyong pasaporte?")[0]).toBe("Heto po ang pasaporte ko.");
+    expect(hintReplies("en", "Good evening")).toEqual([]);
+  });
+  it("merges without duplicates, keeping order, max 3", () => {
+    expect(mergeReplies(["Heto po ang pasaporte ko."], ["Heto po ang pasaporte ko!", "Salamat po.", "Opo.", "Sige po."])).toEqual(["Heto po ang pasaporte ko.", "Salamat po.", "Opo."]);
+  });
+});
+
+describe("generic question reply", async () => {
+  const { hintReplies } = await import("./talk");
+  it("is used only when nothing specific matches", () => {
+    expect(hintReplies("tl", "Maaari ko bang makita ang iyong pasaporte?")).toEqual(["Heto po ang pasaporte ko."]);
+    expect(hintReplies("en", "Anything else?")).toEqual(["That's all, thank you."]);
+  });
+});

@@ -6,7 +6,7 @@ import { Button, Card, Chip, ErrorBox, H2, Muted, Pill, styles } from "../compon
 import { phoneSuggestReplies } from "../nanoEngine";
 import { useNano } from "../nanoStore";
 import { downloadedLanguages, prepareTranslation, translateTexts } from "../onDevice";
-import { phrasebookReplies, SCENARIOS, suggestionPrompt, type MeLang, type Scenario } from "../shared";
+import { hintReplies, mergeReplies, phrasebookReplies, SCENARIOS, suggestionPrompt, type MeLang, type Scenario } from "../shared";
 import { listen, offlineSpeechLanguages, speak, THEM_LANGS, type Listening } from "../speech";
 import { useStore } from "../store";
 import { C, S } from "../theme";
@@ -44,6 +44,8 @@ export function TalkScreen() {
   const [packs, setPacks] = useState<string[]>([]);
   const [shown, setShown] = useState<Line | null>(null);
   const [stayOpen, setStayOpen] = useState(false);
+  /** Typed fallback for the other person's line (noisy places, or a language without offline speech). */
+  const [theirDraft, setTheirDraft] = useState<string | null>(null);
   const session = useRef<Listening | null>(null);
   const nextId = useRef(1);
   const scroll = useRef<ScrollView>(null);
@@ -71,20 +73,32 @@ export function TalkScreen() {
     return (await translateTexts([text], from, to)).texts[0] ?? text;
   }
 
-  async function refreshSuggestions(theySaid: string, history: Line[]) {
+  /**
+   * Reply bubbles: phrase-bank answers that clearly fit come first (a passport request gets
+   * "Here is my passport"), then Gemini Nano's ideas. Nano writes in English, where it is strongest,
+   * and ML Kit translates them to Filipino on the phone.
+   */
+  async function refreshSuggestions(theySaidMe: string, theySaidEn: string, history: Line[]) {
+    const hints = hintReplies(me, theySaidMe);
     if (nano.status === "available") {
       setThinking(true);
-      const ideas = await phoneSuggestReplies(
-        suggestionPrompt({ scenario, lang: me, theySaid, history: history.map((l) => ({ who: l.who, text: l.who === "me" ? l.original : l.translated })) }),
-      );
-      setThinking(false);
-      if (ideas.length) {
-        setSuggestions(ideas);
-        setSuggestionSource("nano");
-        return;
+      try {
+        let ideas = await phoneSuggestReplies(
+          suggestionPrompt({ scenario, lang: "en", theySaid: theySaidEn, history: history.map((l) => ({ who: l.who, text: l.who === "me" ? l.original : l.translated })) }),
+        );
+        if (ideas.length && me !== "en") ideas = (await translateTexts(ideas, "en", me)).texts;
+        if (ideas.length) {
+          setSuggestions(mergeReplies(hints, ideas));
+          setSuggestionSource("nano");
+          return;
+        }
+      } catch {
+        // Fall through to the phrase bank.
+      } finally {
+        setThinking(false);
       }
     }
-    setSuggestions(phrasebookReplies(scenario, me, theySaid));
+    setSuggestions(mergeReplies(hints, phrasebookReplies(scenario, me, theySaidMe)));
     setSuggestionSource("phrasebook");
   }
 
@@ -101,21 +115,24 @@ export function TalkScreen() {
       const heard = (await session.current.done).trim();
       setPartial("");
       if (!heard) return;
-      if (who === "me") {
-        setDraft(heard);
-      } else {
-        const translated = await translate(heard, them, me);
-        const line: Line = { id: nextId.current++, who: "them", original: heard, translated };
-        const history = [...lines, line];
-        setLines(history);
-        refreshSuggestions(translated, history);
-      }
+      if (who === "me") setDraft(heard);
+      else await addTheirLine(heard);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setListening(null);
       session.current = null;
     }
+  }
+
+  /** Adds what the other person said (heard or typed), translates it, and refreshes the reply bubbles. */
+  async function addTheirLine(heard: string) {
+    const translated = await translate(heard, them, me);
+    const line: Line = { id: nextId.current++, who: "them", original: heard, translated };
+    const history = [...lines, line];
+    setLines(history);
+    const english = them === "en" ? heard : me === "en" ? translated : await translate(heard, them, "en");
+    refreshSuggestions(translated, english, history);
   }
 
   async function send(text: string) {
@@ -212,6 +229,45 @@ export function TalkScreen() {
             <ErrorBox message={error} />
           </View>
         ) : null}
+
+        {theirDraft === null ? (
+          <Pressable onPress={() => setTheirDraft("")} accessibilityRole="button" style={{ marginTop: S.md }}>
+            <Text style={{ color: C.brandStrong, fontWeight: "600" }}>⌨ Type what they said ({langLabel(them)})</Text>
+          </Pressable>
+        ) : (
+          <View style={{ marginTop: S.md, gap: S.sm }}>
+            <TextInput
+              value={theirDraft}
+              onChangeText={setTheirDraft}
+              placeholder={`What they said, in ${langLabel(them)}`}
+              style={styles.input}
+              accessibilityLabel="What the other person said"
+            />
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Button label="Cancel" variant="ghost" onPress={() => setTheirDraft(null)} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  label="Add their line"
+                  icon="chatbubble"
+                  variant="secondary"
+                  disabled={!theirDraft.trim()}
+                  onPress={async () => {
+                    const t = theirDraft.trim();
+                    setTheirDraft(null);
+                    setError(null);
+                    try {
+                      await addTheirLine(t);
+                    } catch (e) {
+                      setError(e instanceof Error ? e.message : String(e));
+                    }
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+        )}
       </ScrollView>
 
       <View style={{ borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.surface, padding: S.md, gap: S.sm }}>
