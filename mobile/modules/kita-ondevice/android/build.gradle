@@ -1,0 +1,28 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'ph.kitaph.ondevice'
+version = '0.2.0'
+
+android {
+  namespace "ph.kitaph.ondevice"
+  defaultConfig {
+    versionCode 2
+    versionName "0.2.0"
+    minSdkVersion 26
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  // Gemini Nano through Android AICore. The model is provided by the OS, not bundled in KitaPH.
+  // beta2: newer betas pull Kotlin stdlib 2.3, which this Expo SDK 57 toolchain (Kotlin 2.1) cannot compile against.
+  implementation "com.google.mlkit:genai-prompt:1.0.0-beta2"
+  // On-device translation (language packs downloaded once) and language identification (bundled model).
+  implementation "com.google.mlkit:translate:17.0.3"
+  implementation "com.google.mlkit:language-id:17.0.6"
+}
