@@ -97,3 +97,22 @@ describe("traveler", () => {
     expect(explainCharges(["SENIOR DISC 20%  -152.00"]).map((n) => n.id)).toEqual(["discount"]);
   });
 });
+
+describe("findPrices (any script, both directions)", async () => {
+  const { findPrices } = await import("./traveler");
+  it("reads a Japanese menu in yen and shows pesos", () => {
+    const p = findPrices(["ラーメン ¥980", "餃子 450円", "生ビール 600", "TEL 03-1234-5678"], "JPY", null);
+    expect(p.map((x) => [x.label, x.printed, x.converted])).toEqual([
+      ["ラーメン", "¥980", "≈₱389"],
+      ["餃子", "¥450", "≈₱179"],
+      ["生ビール", "¥600", "≈₱238"],
+    ]);
+  });
+  it("reads a Korean menu in won", () => {
+    const p = findPrices(["김치찌개 9,000원"], "KRW", null);
+    expect(p[0]).toMatchObject({ label: "김치찌개", printed: "₩9,000", phpCentavos: 42201 });
+  });
+  it("still works for pesos to a foreign currency", () => {
+    expect(findPrices(["Chicken Adobo  ₱150"], null, "USD")[0]).toMatchObject({ printed: "₱150", converted: "≈US$2.39" });
+  });
+});

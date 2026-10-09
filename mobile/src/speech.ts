@@ -127,3 +127,10 @@ export function speak(text: string, code: string) {
   Speech.stop();
   Speech.speak(text, { language: TTS_LOCALE[code] ?? code, rate: 0.95 });
 }
+
+/** The language to listen in: the preferred one if its offline pack is installed, else English if it is. */
+export async function speechLanguageFor(preferred: string): Promise<string> {
+  const langs = await offlineSpeechLanguages();
+  if (langs.includes(preferred)) return preferred;
+  return langs.includes("en") ? "en" : preferred;
+}

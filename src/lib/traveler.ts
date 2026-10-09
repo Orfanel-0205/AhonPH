@@ -2,8 +2,8 @@
  * Traveler mode: finds peso prices in scanned text (receipts, menus, price tags), converts them,
  * and explains Philippine charges. Explanations are written in English and translated on-device.
  */
-import { toCentavos } from "./money";
-import { convertFromPhp, formatForeign, type CurrencyCode } from "./rates";
+import { formatPeso, roundToPeso, toCentavos } from "./money";
+import { convertFromPhp, convertToPhp, formatCurrency, formatForeign, type CurrencyCode } from "./rates";
 import type { Centavos } from "./types";
 
 export interface PricedLine {
@@ -70,4 +70,44 @@ export function explainCharges(rows: string[]): ChargeNote[] {
     });
   }
   return notes;
+}
+
+export interface Price {
+  label: string;
+  /** The price as printed, e.g. "¥980" or "₱150". */
+  printed: string;
+  /** Value in Philippine centavos. */
+  phpCentavos: Centavos;
+  /** The price in the reader's currency, e.g. "₱389" for a Filipino abroad. */
+  converted: string;
+}
+
+// Optional currency prefix (¥980, HK$45) or suffix (980円, 9,000원) around the amount at the end of a row.
+const ANY_PRICE_AT_END =
+  /(?:HK\$|S\$|NT\$|US\$|A\$|C\$|₱|PHP|Php|P|¥|￥|₩|\$|฿|€|£|RM|Rp\.?)?\s?(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d{1,7}(?:\.\d{1,2})?)\s*(?:円|원|元|บาท|yen|won|baht|php|pesos?)?\s*[A-Z*]{0,2}\s*$/iu;
+
+/**
+ * Prices on a menu, price tag or receipt in any script and currency. `from` is the currency the
+ * prices are in (null = pesos); `to` is the reader's currency (null = pesos).
+ */
+export function findPrices(rows: string[], from: CurrencyCode | null, to: CurrencyCode | null): Price[] {
+  const out: Price[] = [];
+  for (const row of rows) {
+    const m = row.match(ANY_PRICE_AT_END);
+    if (!m) continue;
+    const label = row.slice(0, m.index).replace(/[.\s:\-…]+$/gu, "").trim();
+    // A real item name has at least two letters in any script (ラーメン, 김치찌개, Adobo).
+    if (!/\p{L}{2,}/u.test(label)) continue;
+    if (/\b(TIN|NO\.?|TEL|PHONE|CEL|DATE|TIME|SI|OR|QTY|ITEMS?)\b/i.test(label) && !/TOTAL/i.test(label)) continue;
+    const value = Number(m[1].replace(/,/g, ""));
+    if (!(value > 0) || value > 10_000_000) continue;
+    const phpCentavos = from ? convertToPhp(value, from) : toCentavos(value);
+    out.push({
+      label,
+      printed: from ? formatCurrency(value, from) : formatPeso(phpCentavos, { showCentavos: !Number.isInteger(value) }),
+      phpCentavos,
+      converted: to ? formatForeign(convertFromPhp(phpCentavos, to), to) : `≈${formatPeso(roundToPeso(phpCentavos))}`,
+    });
+  }
+  return out;
 }

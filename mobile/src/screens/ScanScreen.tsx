@@ -16,7 +16,10 @@ import {
   EXPENSE_CATEGORIES,
   EXPENSE_INFO,
   explainCharges,
-  findPricedLines,
+  findPrices,
+  detectCurrency,
+  convertToPhp,
+  formatCurrency,
   formatDate,
   formatForeign,
   formatPct,
@@ -336,16 +339,21 @@ function WorkerResult({ ocr, imageUri, imageBase64, onSaved }: { ocr: OcrResult;
 }
 
 const CURRENCIES = Object.keys(FX.phpPerUnit) as CurrencyCode[];
+const TARGETS = [{ code: "tl", label: "Filipino" }, ...TRAVELER_LANGUAGES];
 
 function TravelerResult({ ocr }: { ocr: OcrResult }) {
   const { settings, setSettings } = useStore();
   const today = todayISO();
   const receipt: ScannedReceipt | null = useMemo(() => parseOcrReceipt(ocr.lines, today), [ocr, today]);
   const rows = useMemo(() => receipt?.rows ?? ocr.text.split("\n").filter(Boolean), [receipt, ocr]);
-  const priced = useMemo(() => findPricedLines(rows, settings.currency), [rows, settings.currency]);
-  const notes = useMemo(() => explainCharges(rows), [rows]);
-  const target = settings.targetLang;
-  const targetLabel = TRAVELER_LANGUAGES.find((l) => l.code === target)?.label ?? target;
+  // Prices are in the currency printed on the page, or the trip currency; null means pesos.
+  const fromCurrency = useMemo(() => detectCurrency(rows.join(" ")) ?? settings.tripCurrency, [rows, settings.tripCurrency]);
+  // A Filipino abroad sees pesos; a visitor in the Philippines sees their own currency.
+  const toCurrency = fromCurrency ? null : settings.currency;
+  const priced = useMemo(() => findPrices(rows, fromCurrency, toCurrency), [rows, fromCurrency, toCurrency]);
+  const notes = useMemo(() => (fromCurrency ? [] : explainCharges(rows)), [rows, fromCurrency]);
+  const [target, setTarget] = useState<string>(settings.targetLang);
+  const targetLabel = TARGETS.find((l) => l.code === target)?.label ?? target;
 
   const [source, setSource] = useState<string | null>(null);
   const [langs, setLangs] = useState<string[] | null>(null);
@@ -354,8 +362,14 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    detectLanguage(rows.join("\n")).then(setSource);
+    detectLanguage(rows.join("\n")).then((src) => {
+      setSource(src);
+      // A menu in Japanese, Korean... is read in the traveler's own language by default.
+      if (src !== "tl" && src !== "en") setTarget(settings.meLang);
+    });
     downloadedLanguages().then(setLangs);
+    // Only when a new scan arrives.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows]);
 
   // Packs needed: the scanned text's language and the target (English ships with ML Kit).
@@ -415,17 +429,29 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
         <Card style={{ backgroundColor: C.brandSoft, borderColor: C.brandSoft }}>
           <Muted>Total</Muted>
           <Text style={{ fontSize: 28, fontWeight: "800", color: C.text }}>
-            {formatPeso(receipt.totalCentavos, { showCentavos: true })}{" "}
-            <Text style={{ fontSize: 20, color: C.brandStrong }}>{formatForeign(convertFromPhp(receipt.totalCentavos, settings.currency), settings.currency)}</Text>
+            {fromCurrency ? formatCurrency(receipt.totalCentavos / 100, fromCurrency) : formatPeso(receipt.totalCentavos, { showCentavos: true })}{" "}
+            <Text style={{ fontSize: 20, color: C.brandStrong }}>
+              {fromCurrency
+                ? `≈${formatPeso(convertToPhp(receipt.totalCentavos / 100, fromCurrency))}`
+                : formatForeign(convertFromPhp(receipt.totalCentavos, settings.currency), settings.currency)}
+            </Text>
           </Text>
         </Card>
       ) : null}
 
       <Card>
-        <H2>Your language</H2>
+        <H2>Isalin sa · Translate to</H2>
         <View style={[styles.wrap, { marginBottom: S.sm }]}>
-          {TRAVELER_LANGUAGES.map((l) => (
-            <Chip key={l.code} label={l.label} selected={target === l.code} onPress={() => setSettings({ targetLang: l.code })} />
+          {TARGETS.map((l) => (
+            <Chip
+              key={l.code}
+              label={l.label}
+              selected={target === l.code}
+              onPress={() => {
+                setTarget(l.code);
+                if (l.code !== "tl") setSettings({ targetLang: l.code });
+              }}
+            />
           ))}
         </View>
         <Muted>
@@ -451,15 +477,22 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
               </View>
               <View style={{ alignItems: "flex-end" }}>
                 <Text style={{ fontSize: 15, color: C.brandStrong, fontWeight: "700" }}>{p.converted}</Text>
-                <Muted>{formatPeso(p.centavos, { showCentavos: true })}</Muted>
+                <Muted>{p.printed}</Muted>
               </View>
             </View>
           ))}
-          <View style={[styles.wrap, { marginTop: S.md }]}>
-            {CURRENCIES.map((c) => (
-              <Chip key={c} label={c} selected={settings.currency === c} onPress={() => setSettings({ currency: c })} />
-            ))}
-          </View>
+          {fromCurrency ? (
+            <Muted style={{ marginTop: S.sm }}>
+              Prices read as {fromCurrency}
+              {settings.tripCurrency === fromCurrency ? " (your trip currency)" : ""}, shown in pesos.
+            </Muted>
+          ) : (
+            <View style={[styles.wrap, { marginTop: S.md }]}>
+              {CURRENCIES.map((c) => (
+                <Chip key={c} label={c} selected={settings.currency === c} onPress={() => setSettings({ currency: c })} />
+              ))}
+            </View>
+          )}
           <Muted style={{ marginTop: S.sm }}>Approximate, using {FX.source}. Money changers and cards use different rates.</Muted>
         </Card>
       ) : null}

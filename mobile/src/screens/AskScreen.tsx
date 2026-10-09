@@ -5,7 +5,7 @@ import { Button, Card, Chip, ErrorBox, H2, Muted, Pill, styles } from "../compon
 import { hubAdvise, hubQuickLog, hubStatus, normalizeHubUrl, type HubStatus } from "../hub";
 import { NANO_LABEL, phoneAdvise, phoneQuickLog } from "../nanoEngine";
 import { useNano } from "../nanoStore";
-import { listen } from "../speech";
+import { listen, speechLanguageFor } from "../speech";
 import {
   applyCurrency,
   basicQuickLog,
@@ -212,7 +212,8 @@ function QuickLog({
     setError(null);
     setListening(true);
     try {
-      const s = await listen(meLang, setText);
+      // Filipino offline speech isn't on every phone; English recognition still catches Taglish amounts.
+      const s = await listen(await speechLanguageFor(meLang), setText);
       const heard = await s.done;
       if (heard) setText(heard);
     } catch (e) {

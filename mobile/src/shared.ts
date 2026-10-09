@@ -13,7 +13,7 @@ export { findUngroundedNumbers } from "../../src/lib/numbers";
 export { checkReceipt, checkReceiptWithSubtotal, type ReceiptCheck } from "../../src/lib/receipt";
 export { parseOcrReceipt, type OcrLine, type ScannedReceipt } from "../../src/lib/ocrReceipt";
 export { breakdownReceipt, receiptTips, type GroupTotal } from "../../src/lib/receiptInsights";
-export { findPricedLines, explainCharges, type ChargeNote, type PricedLine } from "../../src/lib/traveler";
+export { findPricedLines, findPrices, explainCharges, type ChargeNote, type PricedLine, type Price } from "../../src/lib/traveler";
 export { FX, convertFromPhp, formatForeign, type CurrencyCode } from "../../src/lib/rates";
 export { ECON_FACTS } from "../../src/lib/econ";
 export { ADVISOR_SYSTEM_PROMPT, advisorUserMessage, normalizeQuickLog, quickLogSystemPrompt, type ParsedRecord } from "../../src/lib/ai";
