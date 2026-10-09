@@ -10,7 +10,7 @@ The challenge: an AI product that stays genuinely useful when the cloud disappea
 
 - **Not private:** receipts, salaries, remittances and debts would leave the phone. KitaPH uploads nothing; no account, no cloud AI, no analytics.
 - **Expensive:** each cloud scan uploads a 1–3 MB photo over paid mobile data and costs inference per request. The app shows "0 bytes sent" next to the real photo size on every scan.
-- **Slow or unavailable:** on-device text recognition takes under a second and does not depend on signal in the province or roaming abroad.
+- **Slow or unavailable:** text recognition runs on the phone (each scan shows how long it took) and never depends on signal in the province or roaming abroad.
 - **Close to impossible:** "Presyo" (personal inflation) needs a year of item-level receipts — too personal to hand to a server, natural on your own phone.
 
 ## What runs where

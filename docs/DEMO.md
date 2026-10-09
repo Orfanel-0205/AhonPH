@@ -19,7 +19,7 @@
 **0:40 – 1:00 · The promise.** "The challenge asks for AI that stays useful when the cloud disappears. So let's make it disappear." *Turn on airplane mode now.* Point at the header: **Offline · AI still on**. "KitaPH reads Joy's receipts and answers her in Taglish — all on this phone."
 
 **1:00 – 2:10 · Scan a receipt (live, airplane mode).** Scan → photo of a real receipt.
-- "Read on this phone in under a second." Point at **Items add up to the TOTAL ✓**: "The AI reads; plain code checks every peso."
+- Read the time on the pill ("Read on-device in …s"). Point at **Items add up to the TOTAL ✓**: "The AI reads; plain code checks every peso."
 - Point at **0 bytes sent · cloud OCR would need this X MB photo**: "On load she pays for, a cloud app would upload this. KitaPH sends nothing."
 - Show the breakdown and the tips: cheaper store from her own past receipts, price change since last purchase, rice inflation.
 - Save.

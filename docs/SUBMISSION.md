@@ -18,7 +18,7 @@ KitaPH stays fully useful when the cloud disappears: in airplane mode it still r
 
 - **Not private.** Receipts, salaries, remittances and debts are the most sensitive data a minimum-wage worker has. KitaPH never uploads them; there is no account and no cloud AI. The Privacy screen shows what stays on the phone.
 - **Expensive.** Every cloud scan means uploading a 1–3 MB photo over paid mobile data and paying for inference per request. KitaPH shows "0 bytes sent" next to the real photo size on each scan, and costs nothing per use.
-- **Slow or unavailable.** Text recognition takes under a second on the phone and does not wait on a weak signal in the province or abroad without roaming.
+- **Slow or unavailable.** Text recognition runs on the phone (each scan shows how long it took) and never waits on a weak signal in the province or abroad without roaming.
 - **Close to impossible.** "Presyo" compares the prices of the exact items you bought a year ago with today's, from a year of item-level receipts. That history is too personal to hand to a server; on the phone it is simply your data.
 
 ## What runs locally
