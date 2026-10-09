@@ -8,7 +8,9 @@ Abroad, data costs money and the language is a wall. LakbayMate helps Filipino t
 - **Scan:** point at a menu, sign or receipt. LakbayMate reads Latin, Japanese, Korean and Chinese text on the phone, shows every price **in pesos**, and **Gemini Nano names each dish** with a short note (pork, beef, seafood, alcohol). Receipts are broken down and checked against the printed total.
 - **Trip budget:** set a peso budget for the trip. Everything you scan, say or type ("taxi 2,300 yen") updates it **immediately**: what's left, **what you can still spend today** in pesos and yen, your pace, and tips. Tips are computed by code; Gemini Nano can add tips in its own words, and any tip with an amount that isn't in your records is dropped.
 
-- **AI Lab:** one button runs every on-device model live, in nine steps, on a bundled sample receipt and a short conversation. Each step shows its engine, a measured time and the result. At the end, Android's own counters report how many bytes the app sent and received during the run (0 in airplane mode).
+- **Hatian (split the bill):** for barkada and family trips. Say who had what in one Taglish sentence ("kay Maria ang karaage, hati kaming lahat sa beer"); the local AI assigns the receipt items, and code computes each person's share in yen and pesos, with tax split by what each ordered, adding up to the total exactly. Share it as text, and save just your share to the trip budget.
+- **Team laptop AI:** a teammate's phone without Gemini Nano joins the team laptop's hotspot and gets every AI feature from the laptop's own model (Gemma 3 4B via Ollama), with the same prompts and code checks. No internet either way.
+- **AI Lab:** one button runs every on-device model live, in ten steps, on a bundled sample receipt and a short conversation. Each step shows its engine, a measured time and the result. At the end, Android's own counters report how many bytes the app sent and received during the run (0 in airplane mode).
 
 **All the AI runs on the phone** (speech recognition, translation, text recognition and Gemini Nano), so it keeps working in airplane mode, on a plane, in the subway, or without roaming.
 
@@ -38,6 +40,8 @@ The challenge: an AI product that stays genuinely useful when the cloud disappea
 | Budget tips in plain words | **Phone** | Gemini Nano, checked against computed facts | No |
 | No-receipt logging ("taxi 2,300 yen"), money advisor | **Phone** | Gemini Nano + LakbayMate code checks | No |
 | Receipt breakdown, add-up check, tips | **Phone** | LakbayMate TypeScript code (unit-tested) | No |
+| Who-had-what for bill splits | **Phone** (or team laptop) | Gemini Nano (or Gemma 3 4B) assigns; code computes every share | No |
+| All AI features on phones without Gemini Nano | **Team laptop** over its hotspot / local Wi-Fi | Gemma 3 4B via Ollama (`/api/ai/generate`), same prompts and checks | No |
 | Bigger Taglish model (optional) | **User's laptop** over local Wi-Fi | Gemma 3 4B via Ollama | No |
 | Rates/PSA refresh, encrypted backup (optional) | LakbayMate Cloud | FastAPI on Render + Supabase | Yes |
 
@@ -103,11 +107,13 @@ Caveats: we wrote all sentences ourselves; the "pinadala" family rule in `src/li
 - Oct 10, ~2:15 AM, one photo of a sample Japanese restaurant receipt (30 printed lines). Japanese OCR read 18 of the 19 money amounts exactly; ¥2,000 came out as "2.000". Store, address and slip words had 4 character slips (e.g. 搬 for 農). Before this change the app found only a table number ("¥2") and the totals. **We then wrote the Japanese receipt reader using this receipt** (it is a unit-test fixture, so this is not a held-out result): it now finds all 5 items with quantities, checks that they add up to 商品計 ¥19,500, and shows 合計 ¥20,940 ≈ ₱8,317 with tax ¥1,842. Gemini Nano named 5 of 5 items in 11.2 s. Saving it updated the trip budget at once.
 - Speech recognition starts on the phone for installed languages (ja-JP, en-GB). An end-to-end test with a live speaker is still to be done.
 - Oct 10, ~2:47 AM and ~2:52 AM, **AI Lab, airplane mode with Wi-Fi off**: 9 of 9 steps in 30.0 s and in 28.2 s. Android TrafficStats reported **0 bytes sent and 0 bytes received** by the app during both runs. Japanese OCR of the bundled sample receipt: 244–302 ms. Language ID: 8–18 ms. ML Kit translation: about 200 ms ("Please give me your accounting by cash register"); Gemini Nano's reading of the same line: 1.8–1.9 s ("Please pay at the register. Credit cards are accepted."). Gemini Nano Japanese answer: 1.2 s (カードで支払えますか?). Naming 5 items: 8.3–8.8 s. Taglish spending: 8.0 s. Budget tip: 6.8–8.0 s. On that sample photo the OCR read the large "¥4,895" as "44,895"; the receipt check corrected it because ¥4,895 = 小計 + 消費税, and the screen says so.
-- Known slips: Gemini Nano once described 親子井 (an OCR misreading of 親子丼, chicken and egg) as "steamed eggs with pork". That is why every menu reading carries an "ask the staff if you have allergies or avoid pork" note.
+- Oct 10, ~3:38–3:58 AM, **team laptop AI** (phone connected to the laptop hub over USB port forwarding, standing in for the laptop's hotspot): AI Lab 9 of 9 steps in 9.6 s, then 10 of 10 (with the bill split) in 9.7 s and 11.2 s, all through Gemma 3 4B on an RTX 4050 laptop. Back on Gemini Nano: 10 of 10 in 30.3 s and 31.0 s.
+- **Bill split.** First prompt: Gemma 3 4B misassigned the sample sentence (3 of 5). After we asked the model to name each item in plain English before assigning it, Gemma got all 5 right (Ako ¥1,191 · Maria ¥1,577 · Jun ¥2,127, the hand-computed split). On the harder sentence ("isang beer" each for two people), Gemini Nano gave the beer to Maria only; on the simpler sentence now used in the AI Lab it assigned every item correctly (Ako ¥1,632 · Maria ¥1,357 · Jun ¥1,906), in 4.5 s on the Split screen. Assignments can always be fixed with a tap.
+- Known slips: Gemini Nano once described 親子井 (an OCR misreading of 親子丼, chicken and egg) as "steamed eggs with pork". After the 丼 fix it called 親子丼 "chicken and pork rice bowl" (there is no pork) and 枝豆 "green beans" (they are soybeans). That is why every menu reading carries an "ask the staff if you have allergies or avoid pork" note.
 
 Japanese quality was judged by our team, not formally evaluated. The hand-written Japanese, Korean and Chinese phrases are in `src/lib/talk.ts` for anyone to check.
 
-**Other checks.** Receipt vision with Qwen3-VL 2B on the hub read 1 synthetic receipt exactly (one generated image only). The on-device receipt reader is unit-tested on hand-built OCR layouts and one real phone OCR fixture; accuracy on real receipts has not been measured. Unit tests: `npm test` (124) and `cd cloud && pytest` (5).
+**Other checks.** Receipt vision with Qwen3-VL 2B on the hub read 1 synthetic receipt exactly (one generated image only). The on-device receipt reader is unit-tested on hand-built OCR layouts and one real phone OCR fixture; accuracy on real receipts has not been measured. Unit tests: `npm test` (133) and `cd cloud && pytest` (5).
 
 ## Running it
 
@@ -136,7 +142,9 @@ npm install
 npm run build && npx next start -H 0.0.0.0 -p 3000
 ```
 
-Open http://localhost:3000 for model status and the address to type into the phone (Gastos → Laptop hub). Allow Node.js through the firewall on private networks.
+Open http://localhost:3000 for model status and the address to type into the phone. Allow Node.js through the firewall on private networks.
+
+**Team laptop AI.** Turn on the laptop's mobile hotspot (no internet needed) and have teammates join it. In the app: **AI Lab → Team laptop AI**, type the address the hub page shows (for a Windows hotspot usually `192.168.137.1:3000`), tap **Connect**. With **Auto**, phones with Gemini Nano keep using it and others use the laptop; **Team laptop** makes every phone use the laptop's model.
 
 ### LakbayMate Cloud (optional)
 

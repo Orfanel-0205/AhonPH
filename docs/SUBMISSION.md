@@ -4,7 +4,7 @@ Copy each field into the Cerebral Valley form. Items in [brackets] still need fi
 
 **Project name:** LakbayMate — Your Smart Travel Companion
 
-**Short description:** LakbayMate is an offline travel companion for Filipinos abroad. Talk with anyone: LakbayMate hears their language, shows it in Filipino or English, suggests replies you can edit, says your answer aloud in natural Japanese, Korean or Chinese, and translates it back so you can check it. Scan menus to get dish names and prices in pesos. Set a trip budget that updates the moment you log spending, with tips. All the AI runs on the phone (Gemini Nano, ML Kit, on-device speech), so it works in airplane mode, and the built-in AI Lab proves it: nine live AI steps with timings, and Android's own count of the bytes sent (zero).
+**Short description:** LakbayMate is an offline travel companion for Filipinos abroad. Talk with anyone: LakbayMate hears their language, shows it in Filipino or English, suggests replies you can edit, says your answer aloud in natural Japanese, Korean or Chinese, and translates it back so you can check it. Scan menus to get dish names and prices in pesos. Set a trip budget that updates the moment you log spending, with tips, and split a receipt with your group by saying who had what. All the AI runs on the phone (Gemini Nano, ML Kit, on-device speech), so it works in airplane mode, and the built-in AI Lab proves it: ten live AI steps with timings, and Android's own count of the bytes sent (zero).
 
 **Team members:** [official team name and member names from appbuildersph.com/hackathon]
 
@@ -24,7 +24,7 @@ Abroad, the cloud really does disappear: no roaming, a dead pocket Wi-Fi, a subw
 ## What runs locally
 
 - Speech recognition of the other person: Android on-device speech recognition (offline language packs).
-- Natural Japanese, Korean and Chinese in both directions, reply ideas, menu dish names, budget tips in plain words, no-receipt logging and the money advisor: Gemini Nano, Android's built-in model (AICore), via the ML Kit GenAI Prompt API. Every answer is checked by code; ML Kit, a phrasebook, keyword rules or code-only tips take over when it is unavailable or fails a check.
+- Natural Japanese, Korean and Chinese in both directions, reply ideas, menu dish names, who-had-what for bill splits, budget tips in plain words, no-receipt logging and the money advisor: Gemini Nano, Android's built-in model (AICore), via the ML Kit GenAI Prompt API. Every answer is checked by code; ML Kit, a phrasebook, keyword rules or code-only tips take over when it is unavailable or fails a check. On phones without Gemini Nano, the same prompts can run on the team's own laptop (Gemma 3 4B via Ollama) over its hotspot, still with no internet.
 - Other languages, back-translations and language detection: Google ML Kit on-device translation and language identification.
 - Hand-checked Japanese, Korean and Chinese for common traveler phrases.
 - Reading your reply aloud: Android text-to-speech with offline voices.
@@ -55,7 +55,7 @@ Taglish quick-log, three sets of 15 sentences (dev; held-out committed before tu
 - Gemma 3 4B on the laptop hub: dev 15 → 15, held-out 12 → 14, **final 14 → 14 of 15**; median 2.1 s.
 - Basic mode (no AI): dev 11, held-out 7, final 9 of 15.
 
-Observed on the phone (single runs, not benchmarks): the AI Lab ran 9 of 9 on-device AI steps in 30.0 s and 28.2 s in airplane mode, with 0 bytes sent and received by the app (Android TrafficStats); Gemini Nano budget tips in 4.3 s and 4.6 s; Japanese OCR of a synthetic test menu in 0.2 s; Gemini Nano menu reading in 7.8–18.3 s over three runs. All test sentences were written by us; sets are small, so treat results as indicative. Details and caveats are in the README.
+Observed on the phone (single runs, not benchmarks): the AI Lab ran 10 of 10 AI steps in 30.3–31.0 s on Gemini Nano and 9.7–11.2 s through the team laptop; earlier 9-step runs took 30.0 s and 28.2 s in airplane mode, with 0 bytes sent and received by the app (Android TrafficStats); Gemini Nano budget tips in 4.3 s and 4.6 s; Japanese OCR of a synthetic test menu in 0.2 s; Gemini Nano menu reading in 7.8–18.3 s over three runs. All test sentences were written by us; sets are small, so treat results as indicative. Details and caveats are in the README.
 
 ## Suggested post (X / LinkedIn)
 
