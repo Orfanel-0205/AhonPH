@@ -6,7 +6,11 @@ import { useNano } from "./nanoStore";
 import { breakdownReceipt, ECON_FACTS, findUngroundedNumbers, formatDate, formatPct, formatPeso, type Insight, type ReceiptItem } from "./shared";
 import { C, S } from "./theme";
 
-const QUESTION = "Ipaliwanag ang resibong ito sa simpleng Taglish, at magbigay ng 2 tip para makatipid sa susunod.";
+const QUESTION = [
+  "Ipaliwanag ang resibong ito sa 2 maikling pangungusap na Taglish, tapos magbigay ng EKSAKTONG 2 tip para makatipid.",
+  "Gamitin lang ang nasa DATA. Huwag sabihing mas mura ang isang item sa ibang tindahan maliban kung nakasulat iyon sa Findings.",
+  "Huwag mag-imbento ng presyo, tindahan, o item na wala sa DATA.",
+].join(" ");
 
 /** The DATA block for one receipt. Every number here is computed by code; the model only explains it. */
 export function receiptContext(r: { merchant: string; date: string; items: ReceiptItem[]; totalCentavos: number }, tips: Insight[]): string {

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { BarRow, Button, Card, Chip, H2, InsightCard, Muted, Pill, Stat, styles } from "../components";
 import {
   breakdownReceipt,
@@ -196,8 +197,9 @@ function ReceiptModal({ receipt, history, onClose }: { receipt: Receipt | null; 
     history.filter((h) => h.id !== receipt.id),
   );
   return (
-    <Modal visible animationType="slide" onRequestClose={onClose}>
-      <ScrollView style={{ backgroundColor: C.bg }} contentContainerStyle={[styles.screen, { paddingTop: S.xl }]}>
+    <Modal visible animationType="slide" onRequestClose={onClose} statusBarTranslucent={false}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={["top", "bottom"]}>
+      <ScrollView style={{ backgroundColor: C.bg }} contentContainerStyle={[styles.screen, { paddingTop: S.lg }]}>
         <Text style={styles.title}>{receipt.merchant}</Text>
         <Muted style={{ marginBottom: S.md }}>
           {formatDate(receipt.date)} · {receipt.items.length} items · {formatPeso(receipt.totalCentavos, { showCentavos: true })}
@@ -228,6 +230,7 @@ function ReceiptModal({ receipt, history, onClose }: { receipt: Receipt | null; 
         </Card>
         <Button label="Close" icon="close" variant="secondary" onPress={onClose} />
       </ScrollView>
+      </SafeAreaView>
     </Modal>
   );
 }
