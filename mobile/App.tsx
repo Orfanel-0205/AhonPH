@@ -1,36 +1,61 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useNetworkState } from "expo-network";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState, type ComponentProps } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { refreshNano } from "./src/nanoStore";
 import { AskScreen } from "./src/screens/AskScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
 import { PrivacyScreen } from "./src/screens/PrivacyScreen";
 import { ScanScreen } from "./src/screens/ScanScreen";
+import { SetupScreen } from "./src/screens/SetupScreen";
 import { StoreProvider, useStore } from "./src/store";
-import KitaNano from "./modules/kita-nano/src/KitaNanoModule";
 import { C } from "./src/theme";
 
 type Tab = "home" | "scan" | "ask" | "privacy";
+type IconName = ComponentProps<typeof Ionicons>["name"];
 
-const TABS: { id: Tab; label: string; icon: ComponentProps<typeof Ionicons>["name"] }[] = [
+const TABS: { id: Tab; label: string; icon: IconName }[] = [
   { id: "home", label: "Home", icon: "home" },
   { id: "scan", label: "Scan", icon: "scan" },
   { id: "ask", label: "Kita AI", icon: "chatbubbles" },
   { id: "privacy", label: "Privacy", icon: "shield-checkmark" },
 ];
 
-function Shell() {
-  const { ready } = useStore();
-  const [tab, setTab] = useState<Tab>("home");
+/** Live connectivity, so the demo can show the app still working with the network off. */
+function NetworkChip() {
+  const net = useNetworkState();
+  const offline = net.isConnected === false || net.isInternetReachable === false;
+  return (
+    <View
+      accessibilityLabel={offline ? "Offline. On-device AI still works." : "Online. AI runs on this device."}
+      style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: offline ? C.goodSoft : C.brandSoft, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10 }}
+    >
+      <Ionicons name={offline ? "airplane" : "phone-portrait"} size={13} color={offline ? C.good : C.brandStrong} />
+      <Text style={{ fontSize: 12, fontWeight: "700", color: offline ? C.good : C.brandStrong }}>{offline ? "Offline · AI still on" : "AI on this phone"}</Text>
+    </View>
+  );
+}
 
-  // Logged once at startup so on-device AI availability can be confirmed from adb logcat.
+function Shell() {
+  const { ready, settings } = useStore();
+  const [tab, setTab] = useState<Tab>("home");
+  const [setupOpen, setSetupOpen] = useState(false);
+
   useEffect(() => {
-    if (!KitaNano) return console.log("[KitaNano] bridge missing");
-    KitaNano.checkStatus()
-      .then(async (s) => console.log(`[KitaNano] status=${s}`, s === "available" ? JSON.stringify(await KitaNano!.getInfo()) : ""))
-      .catch((e) => console.log(`[KitaNano] error=${e?.message ?? e}`));
+    refreshNano();
   }, []);
+
+  if (!ready) {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: "center" }}>
+        <ActivityIndicator color={C.brand} />
+      </View>
+    );
+  }
+
+  const showSetup = setupOpen || !settings.setupDone;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={["top", "bottom"]}>
@@ -39,44 +64,43 @@ function Shell() {
         <Text style={{ fontSize: 20, fontWeight: "800", color: C.brandStrong }}>
           Kita<Text style={{ color: C.text }}>PH</Text>
         </Text>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: C.brandSoft, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10 }}>
-          <Ionicons name="phone-portrait" size={13} color={C.brandStrong} />
-          <Text style={{ fontSize: 12, fontWeight: "600", color: C.brandStrong }}>On-device AI · offline OK</Text>
-        </View>
+        <NetworkChip />
       </View>
 
       <View style={{ flex: 1 }}>
-        {!ready ? (
-          <ActivityIndicator style={{ marginTop: 48 }} color={C.brand} />
+        {showSetup ? (
+          <SetupScreen onDone={() => setSetupOpen(false)} />
         ) : tab === "home" ? (
           <HomeScreen onScan={() => setTab("scan")} />
         ) : tab === "scan" ? (
           <ScanScreen onSaved={() => setTab("home")} />
         ) : tab === "ask" ? (
-          <AskScreen />
+          <AskScreen onOpenSetup={() => setSetupOpen(true)} />
         ) : (
-          <PrivacyScreen />
+          <PrivacyScreen onOpenSetup={() => setSetupOpen(true)} />
         )}
       </View>
 
-      <View style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.surface }}>
-        {TABS.map((t) => {
-          const active = tab === t.id;
-          return (
-            <Pressable
-              key={t.id}
-              onPress={() => setTab(t.id)}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: active }}
-              accessibilityLabel={t.label}
-              style={{ flex: 1, alignItems: "center", paddingVertical: 8, minHeight: 56 }}
-            >
-              <Ionicons name={active ? t.icon : (`${t.icon}-outline` as ComponentProps<typeof Ionicons>["name"])} size={22} color={active ? C.brand : C.muted} />
-              <Text style={{ fontSize: 11, marginTop: 2, color: active ? C.brand : C.muted, fontWeight: active ? "700" : "500" }}>{t.label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      {showSetup ? null : (
+        <View style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.surface }}>
+          {TABS.map((t) => {
+            const active = tab === t.id;
+            return (
+              <Pressable
+                key={t.id}
+                onPress={() => setTab(t.id)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={t.label}
+                style={{ flex: 1, alignItems: "center", paddingVertical: 8, minHeight: 56 }}
+              >
+                <Ionicons name={active ? t.icon : (`${t.icon}-outline` as IconName)} size={22} color={active ? C.brand : C.muted} />
+                <Text style={{ fontSize: 11, marginTop: 2, color: active ? C.brand : C.muted, fontWeight: active ? "700" : "500" }}>{t.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
     </SafeAreaView>
   );
 }

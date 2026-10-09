@@ -18,3 +18,4 @@ export { FX, convertFromPhp, formatForeign, type CurrencyCode } from "../../src/
 export { ECON_FACTS } from "../../src/lib/econ";
 export { ADVISOR_SYSTEM_PROMPT, advisorUserMessage, normalizeQuickLog, quickLogSystemPrompt, type ParsedRecord } from "../../src/lib/ai";
 export { QUICKLOG_CASES, scoreQuickLog } from "../../src/lib/evalQuicklog";
+export { basicQuickLog } from "../../src/lib/basicParse";

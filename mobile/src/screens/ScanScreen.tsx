@@ -1,9 +1,10 @@
 import * as ImagePicker from "expo-image-picker";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { BarRow, Button, Card, Chip, ErrorBox, H2, InsightCard, Muted, Pill, styles } from "../components";
 import { hubReceipt } from "../hub";
-import { recognizeText, translate, TRAVELER_LANGUAGES, type OcrResult } from "../native";
+import { recognizeText, type OcrResult } from "../native";
+import { detectLanguage, downloadedLanguages, prepareTranslation, translateTexts, TRAVELER_LANGUAGES } from "../onDevice";
 import {
   breakdownReceipt,
   checkReceipt,
@@ -270,40 +271,73 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
   const { settings, setSettings } = useStore();
   const today = todayISO();
   const receipt: ScannedReceipt | null = useMemo(() => parseOcrReceipt(ocr.lines, today), [ocr, today]);
-  const rows = receipt?.rows ?? ocr.text.split("\n");
+  const rows = useMemo(() => receipt?.rows ?? ocr.text.split("\n").filter(Boolean), [receipt, ocr]);
   const priced = useMemo(() => findPricedLines(rows, settings.currency), [rows, settings.currency]);
   const notes = useMemo(() => explainCharges(rows), [rows]);
-  const source = ocr.languages.includes("tl") || ocr.languages.includes("fil") ? "tl" : "en";
+  const target = settings.targetLang;
+  const targetLabel = TRAVELER_LANGUAGES.find((l) => l.code === target)?.label ?? target;
 
-  const [translated, setTranslated] = useState<{ text: string; notes: ChargeNote[]; ms: number; lang: string } | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [source, setSource] = useState<string | null>(null);
+  const [langs, setLangs] = useState<string[] | null>(null);
+  const [translated, setTranslated] = useState<{ lang: string; labels: string[]; text: string; notes: ChargeNote[]; ms: number } | null>(null);
+  const [phase, setPhase] = useState<"idle" | "downloading" | "translating">("idle");
   const [error, setError] = useState<string | null>(null);
 
-  async function runTranslate() {
-    setBusy(true);
+  useEffect(() => {
+    detectLanguage(rows.join("\n")).then(setSource);
+    downloadedLanguages().then(setLangs);
+  }, [rows]);
+
+  // Packs needed: the scanned text's language and the target (English ships with ML Kit).
+  const needed = source ? [...new Set([source, target])].filter((l) => l !== "en") : [];
+  const packsReady = langs !== null && needed.every((l) => langs.includes(l));
+  const sameLanguage = source === target;
+
+  const runTranslate = useCallback(async () => {
+    if (!source || sameLanguage) return;
     setError(null);
+    setPhase("translating");
     try {
-      const target = settings.targetLang;
-      const main = await translate(rows.join("\n"), source, target);
-      const tn: ChargeNote[] = [];
-      let ms = main.ms;
-      for (const n of notes) {
-        const t = await translate(`${n.title}\n${n.body}`, "en", target);
-        ms += t.ms;
-        const [title, ...body] = t.text.split("\n");
-        tn.push({ ...n, title, body: body.join(" ") });
-      }
-      setTranslated({ text: main.text, notes: tn, ms, lang: target });
+      // Two calls in total: scanned text (detected language → target) and the English notes (→ target).
+      const main = await translateTexts([...priced.map((p) => p.label), rows.join("\n")], source, target);
+      const noteTexts = notes.flatMap((n) => [n.title, n.body]);
+      const nt = target === "en" || noteTexts.length === 0 ? { texts: noteTexts, ms: 0 } : await translateTexts(noteTexts, "en", target);
+      setTranslated({
+        lang: target,
+        labels: main.texts.slice(0, priced.length),
+        text: main.texts[priced.length] ?? "",
+        notes: notes.map((n, i) => ({ ...n, title: nt.texts[i * 2] ?? n.title, body: nt.texts[i * 2 + 1] ?? n.body })),
+        ms: main.ms + nt.ms,
+      });
     } catch (e) {
-      setError(
-        `Translation failed: ${e instanceof Error ? e.message : String(e)}. The first use of a language downloads its on-device pack once, so connect to the internet one time, then it works offline.`,
-      );
+      setError(`Translation failed: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
-      setBusy(false);
+      setPhase("idle");
+    }
+  }, [source, sameLanguage, priced, rows, target, notes]);
+
+  // Translate automatically as soon as the packs are on the phone.
+  useEffect(() => {
+    if (packsReady && !sameLanguage && source && translated?.lang !== target && phase === "idle" && !error) runTranslate();
+  }, [packsReady, sameLanguage, source, target, translated, phase, error, runTranslate]);
+
+  async function downloadPacks() {
+    if (!source) return;
+    setError(null);
+    setPhase("downloading");
+    try {
+      await prepareTranslation(source, target);
+      if (target !== "en") await prepareTranslation("en", target);
+      setLangs(await downloadedLanguages());
+    } catch (e) {
+      setError(`Download failed: ${e instanceof Error ? e.message : String(e)}. Connect to Wi-Fi once; after that it works offline.`);
+    } finally {
+      setPhase("idle");
     }
   }
 
-  const showNotes = translated && translated.lang === settings.targetLang ? translated.notes : notes;
+  const showTranslated = translated && translated.lang === target ? translated : null;
+  const showNotes = showTranslated ? showTranslated.notes : notes;
 
   return (
     <View>
@@ -318,28 +352,45 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
       ) : null}
 
       <Card>
-        <H2>Convert to</H2>
-        <View style={styles.wrap}>
-          {CURRENCIES.map((c) => (
-            <Chip key={c} label={c} selected={settings.currency === c} onPress={() => setSettings({ currency: c })} />
+        <H2>Your language</H2>
+        <View style={[styles.wrap, { marginBottom: S.sm }]}>
+          {TRAVELER_LANGUAGES.map((l) => (
+            <Chip key={l.code} label={l.label} selected={target === l.code} onPress={() => setSettings({ targetLang: l.code })} />
           ))}
         </View>
-        <Muted style={{ marginTop: S.sm }}>
-          Approximate, using {FX.source}. Money changers and cards use different rates.
+        <Muted>
+          {source ? `Detected on this phone: ${source === "tl" ? "Filipino / Tagalog" : source.toUpperCase()}. ` : "Detecting language… "}
+          {sameLanguage ? "Already in your language." : phase === "translating" ? "Translating…" : showTranslated ? `Translated on-device in ${(showTranslated.ms / 1000).toFixed(1)}s.` : ""}
         </Muted>
+        {!sameLanguage && source && !packsReady ? (
+          <View style={{ marginTop: S.sm }}>
+            <Button label={phase === "downloading" ? `Downloading ${targetLabel} pack…` : `Get ${targetLabel} pack (one time, ~30 MB)`} icon="cloud-download" onPress={downloadPacks} busy={phase === "downloading"} />
+          </View>
+        ) : null}
+        {error ? <View style={{ marginTop: S.sm }}><ErrorBox message={error} /></View> : null}
       </Card>
 
       {priced.length ? (
         <Card>
-          <H2>Prices found</H2>
+          <H2>Prices</H2>
           {priced.map((p, i) => (
             <View key={`${p.label}-${i}`} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.surface2, gap: S.sm }}>
-              <Text style={{ flex: 1, fontSize: 14, color: C.text }}>{p.label}</Text>
-              <Text style={{ fontSize: 14, color: C.text, fontWeight: "600" }}>
-                {formatPeso(p.centavos, { showCentavos: true })} <Text style={{ color: C.brandStrong }}>{p.converted}</Text>
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 14, color: C.text, fontWeight: "600" }}>{showTranslated?.labels[i] ?? p.label}</Text>
+                {showTranslated && showTranslated.labels[i] !== p.label ? <Muted>{p.label}</Muted> : null}
+              </View>
+              <View style={{ alignItems: "flex-end" }}>
+                <Text style={{ fontSize: 15, color: C.brandStrong, fontWeight: "700" }}>{p.converted}</Text>
+                <Muted>{formatPeso(p.centavos, { showCentavos: true })}</Muted>
+              </View>
             </View>
           ))}
+          <View style={[styles.wrap, { marginTop: S.md }]}>
+            {CURRENCIES.map((c) => (
+              <Chip key={c} label={c} selected={settings.currency === c} onPress={() => setSettings({ currency: c })} />
+            ))}
+          </View>
+          <Muted style={{ marginTop: S.sm }}>Approximate, using {FX.source}. Money changers and cards use different rates.</Muted>
         </Card>
       ) : null}
 
@@ -352,22 +403,12 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
         </View>
       ) : null}
 
-      <Card>
-        <H2>Translate on this phone</H2>
-        <View style={[styles.wrap, { marginBottom: S.md }]}>
-          {TRAVELER_LANGUAGES.map((l) => (
-            <Chip key={l.code} label={l.label} selected={settings.targetLang === l.code} onPress={() => setSettings({ targetLang: l.code })} />
-          ))}
-        </View>
-        <Button label="Translate" icon="language" onPress={runTranslate} busy={busy} />
-        {error ? <View style={{ marginTop: S.sm }}><ErrorBox message={error} /></View> : null}
-        {translated && translated.lang === settings.targetLang ? (
-          <View style={{ marginTop: S.md }}>
-            <Pill label={`Translated on-device in ${(translated.ms / 1000).toFixed(1)}s · ML Kit`} tone="good" icon="phone-portrait" />
-            <Text style={{ marginTop: S.sm, fontSize: 14, color: C.text, lineHeight: 21 }}>{translated.text}</Text>
-          </View>
-        ) : null}
-      </Card>
+      {showTranslated?.text ? (
+        <Card>
+          <H2>Full translation</H2>
+          <Text style={{ fontSize: 14, color: C.text, lineHeight: 21 }}>{showTranslated.text}</Text>
+        </Card>
+      ) : null}
 
       <RawText rows={rows} />
     </View>

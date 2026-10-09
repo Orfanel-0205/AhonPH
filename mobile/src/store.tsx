@@ -11,9 +11,11 @@ export interface Settings {
   hubUrl: string;
   currency: CurrencyCode;
   targetLang: string;
+  /** True once the one-time on-device AI setup screen has been completed or skipped. */
+  setupDone: boolean;
 }
 
-const DEFAULT_SETTINGS: Settings = { hubUrl: "", currency: "USD", targetLang: "en" };
+const DEFAULT_SETTINGS: Settings = { hubUrl: "", currency: "USD", targetLang: "en", setupDone: false };
 
 interface Store {
   ready: boolean;
