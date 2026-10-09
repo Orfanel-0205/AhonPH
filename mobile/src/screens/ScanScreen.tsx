@@ -2,7 +2,10 @@ import * as ImagePicker from "expo-image-picker";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { BarRow, Button, Card, Chip, ErrorBox, H2, InsightCard, Muted, Pill, styles } from "../components";
+import { ExplainReceipt, receiptContext } from "../ExplainReceipt";
 import { hubReceipt } from "../hub";
+import { phoneReadReceipt } from "../nanoEngine";
+import { useNano } from "../nanoStore";
 import { recognizeText, type OcrResult } from "../native";
 import { detectLanguage, downloadedLanguages, prepareTranslation, translateTexts, TRAVELER_LANGUAGES } from "../onDevice";
 import {
@@ -110,7 +113,7 @@ export function ScanScreen({ onSaved }: { onSaved: () => void }) {
 
       {ocr && ocr.text.trim() ? (
         mode === "worker" ? (
-          <WorkerResult key={imageUri ?? ""} ocr={ocr} imageBase64={imageBase64} onSaved={() => { reset(); onSaved(); }} />
+          <WorkerResult key={imageUri ?? ""} ocr={ocr} imageUri={imageUri} imageBase64={imageBase64} onSaved={() => { reset(); onSaved(); }} />
         ) : (
           <TravelerResult key={imageUri ?? ""} ocr={ocr} />
         )
@@ -131,8 +134,10 @@ function RawText({ rows }: { rows: string[] }) {
   );
 }
 
-function WorkerResult({ ocr, imageBase64, onSaved }: { ocr: OcrResult; imageBase64: string | null; onSaved: () => void }) {
+function WorkerResult({ ocr, imageUri, imageBase64, onSaved }: { ocr: OcrResult; imageUri: string | null; imageBase64: string | null; onSaved: () => void }) {
   const { data, update, settings } = useStore();
+  const nano = useNano();
+  const [nanoBusy, setNanoBusy] = useState(false);
   const [hubBusy, setHubBusy] = useState(false);
   const [hubNote, setHubNote] = useState<string | null>(null);
   const today = todayISO();
@@ -154,6 +159,28 @@ function WorkerResult({ ocr, imageBase64, onSaved }: { ocr: OcrResult; imageBase
   );
 
   if (!parsed) return <ErrorBox message="This doesn't look like a receipt. Try Traveler mode for menus and signs." />;
+
+  async function readWithPhoneAi() {
+    if (!imageUri) return;
+    setNanoBusy(true);
+    setHubNote(null);
+    try {
+      const r = await phoneReadReceipt(imageUri);
+      if (r.items.length === 0 && r.totalCentavos === null) {
+        setHubNote("The phone's AI couldn't read items from this photo. Try a flatter, brighter photo.");
+        return;
+      }
+      if (r.items.length) setItems(r.items);
+      if (r.totalCentavos) setTotalText((r.totalCentavos / 100).toFixed(2));
+      if (r.merchant) setMerchant(r.merchant);
+      const c = checkReceipt(r.items, r.totalCentavos ?? 0).check;
+      setHubNote(`Read by Gemini Nano on this phone in ${(r.ms / 1000).toFixed(1)}s. ${c.status === "ok" || c.status === "repaired" ? "Items add up ✓" : "Items don't add up yet — check them below."}`);
+    } catch (e) {
+      setHubNote(e instanceof Error ? e.message : String(e));
+    } finally {
+      setNanoBusy(false);
+    }
+  }
 
   async function doubleCheckWithHub() {
     if (!imageBase64 || !settings.hubUrl) return;
@@ -206,9 +233,20 @@ function WorkerResult({ ocr, imageBase64, onSaved }: { ocr: OcrResult; imageBase
           <TextInput value={totalText} onChangeText={setTotalText} keyboardType="decimal-pad" style={[styles.input, { flex: 1, fontSize: 20, fontWeight: "700" }]} accessibilityLabel="Total amount" />
         </View>
         <View style={{ marginTop: S.sm }}>{checkPill}</View>
-        {settings.hubUrl && imageBase64 ? (
+        {nano.status === "available" && imageUri ? (
           <View style={{ marginTop: S.md }}>
-            <Button label="Double-check with Hub AI" icon="laptop" variant="secondary" onPress={doubleCheckWithHub} busy={hubBusy} />
+            <Button
+              label={check.status === "ok" ? "Re-read with phone AI" : "Read with phone AI (Gemini Nano)"}
+              icon="sparkles"
+              variant={check.status === "ok" ? "ghost" : "secondary"}
+              onPress={readWithPhoneAi}
+              busy={nanoBusy}
+            />
+          </View>
+        ) : null}
+        {settings.hubUrl && imageBase64 ? (
+          <View style={{ marginTop: S.sm }}>
+            <Button label="Double-check with laptop hub" icon="laptop" variant="ghost" onPress={doubleCheckWithHub} busy={hubBusy} />
           </View>
         ) : null}
         {hubNote ? <Muted style={{ marginTop: S.sm }}>{hubNote}</Muted> : null}
@@ -222,6 +260,8 @@ function WorkerResult({ ocr, imageBase64, onSaved }: { ocr: OcrResult; imageBase
           ))}
         </View>
       ) : null}
+
+      <ExplainReceipt context={receiptContext({ merchant, date: parsed.date, items, totalCentavos }, tips)} />
 
       {groups.length ? (
         <Card>

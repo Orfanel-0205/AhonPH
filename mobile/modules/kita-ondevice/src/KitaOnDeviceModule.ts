@@ -24,6 +24,7 @@ declare class KitaOnDeviceModule extends NativeModule<Events> {
   nanoDownload(): Promise<string>;
   nanoWarmup(): Promise<boolean>;
   nanoGenerate(requestId: string, prompt: string, temperature: number, maxOutputTokens: number): Promise<NanoResult>;
+  nanoReadImage(uri: string, prompt: string, maxOutputTokens: number): Promise<{ text: string; ms: number }>;
   downloadedLanguages(): Promise<string[]>;
   prepareTranslation(source: string, target: string): Promise<number>;
   translateBatch(texts: string[], source: string, target: string): Promise<{ texts: string[]; ms: number }>;

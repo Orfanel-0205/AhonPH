@@ -21,6 +21,7 @@ import {
   type PeriodKind,
   type Receipt,
 } from "../shared";
+import { ExplainReceipt, receiptContext } from "../ExplainReceipt";
 import { useStore } from "../store";
 import { C, S } from "../theme";
 
@@ -204,6 +205,7 @@ function ReceiptModal({ receipt, history, onClose }: { receipt: Receipt | null; 
         {tips.map((t) => (
           <InsightCard key={t.id} insight={t} />
         ))}
+        <ExplainReceipt context={receiptContext(receipt, tips)} />
         {groups.length ? (
           <Card>
             <H2>Breakdown</H2>

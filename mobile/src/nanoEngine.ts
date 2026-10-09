@@ -2,13 +2,15 @@
  * KitaPH's language AI on the phone itself: Gemini Nano (built into Android).
  * Same prompts and the same code checks as the laptop hub; only the model differs.
  */
-import { nanoGenerate } from "./onDevice";
+import { nanoGenerate, OnDevice } from "./onDevice";
 import {
   ADVISOR_SYSTEM_PROMPT,
   advisorUserMessage,
+  COMPACT_RECEIPT_PROMPT,
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   normalizeQuickLog,
+  parseCompactReceipt,
   quickLogSystemPrompt,
   refineWithLocalKnowledge,
   type ParsedRecord,
@@ -90,4 +92,16 @@ export async function phoneAdvise(
   }
   if (!r.text.trim()) throw new Error("The phone's AI returned an empty answer. Please ask again.");
   return { text: r.text.trim(), ms: r.ms };
+}
+
+/** Gemini Nano reads the receipt photo itself, on the phone. The caller re-checks that items add up. */
+export async function phoneReadReceipt(uri: string): Promise<ReturnType<typeof parseCompactReceipt> & { ms: number }> {
+  if (!OnDevice) throw new Error("On-device AI is not in this build.");
+  let r: { text: string; ms: number };
+  try {
+    r = await withOneRetry(() => OnDevice!.nanoReadImage(uri, COMPACT_RECEIPT_PROMPT, MAX_OUTPUT_TOKENS));
+  } catch (e) {
+    throw friendly(e);
+  }
+  return { ...parseCompactReceipt(r.text), ms: r.ms };
 }
