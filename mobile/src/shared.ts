@@ -20,6 +20,26 @@ export { ADVISOR_SYSTEM_PROMPT, advisorUserMessage, normalizeQuickLog, quickLogS
 export { QUICKLOG_CASES, QUICKLOG_FINAL, QUICKLOG_HOLDOUT, scoreQuickLog, type QuickLogCase } from "../../src/lib/evalQuicklog";
 export { basicQuickLog, refineWithLocalKnowledge } from "../../src/lib/basicParse";
 export { COMPACT_RECEIPT_PROMPT, parseCompactReceipt } from "../../src/lib/compactReceipt";
-export { hintReplies, mergeReplies, parseSuggestions, phrasebookReplies, SCENARIOS, suggestionPrompt, type MeLang, type Scenario } from "../../src/lib/talk";
+export {
+  acceptPolish,
+  acceptReading,
+  acceptTranslation,
+  curatedTranslation,
+  hintReplies,
+  isNanoLang,
+  mergeReplies,
+  parseSuggestions,
+  phrasebookReplies,
+  polishPrompt,
+  readPrompt,
+  SCENARIOS,
+  suggestionPrompt,
+  TAKE_ME_TO_HOTEL,
+  translatePrompt,
+  type MeLang,
+  type NanoLang,
+  type Scenario,
+} from "../../src/lib/talk";
 export { applyCurrency, type ForeignRecord } from "../../src/lib/tripMoney";
 export { convertToPhp, detectCurrency, formatCurrency } from "../../src/lib/rates";
+export { acceptTripTips, formatPeso as formatTripPeso, inBoth, sampleTrip, tripFacts, tripStatus, tripTipPrompt, tripTips, type TripPlan, type TripStatus } from "../../src/lib/tripBudget";

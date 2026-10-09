@@ -5,6 +5,7 @@ import { useEffect, useState, type ComponentProps } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { refreshNano } from "./src/nanoStore";
+import { onSharedText } from "./src/onDevice";
 import { AskScreen } from "./src/screens/AskScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
 import { PrivacyScreen } from "./src/screens/PrivacyScreen";
@@ -44,9 +45,15 @@ function Shell() {
   const { ready, settings } = useStore();
   const [tab, setTab] = useState<Tab>("home");
   const [setupOpen, setSetupOpen] = useState(false);
+  const [shared, setShared] = useState<string | null>(null);
 
   useEffect(() => {
     refreshNano();
+    // A message shared from a chat app (e.g. the host's message) opens in Usap to read and answer.
+    return onSharedText((text) => {
+      setShared(text);
+      setTab("talk");
+    });
   }, []);
 
   if (!ready) {
@@ -73,9 +80,9 @@ function Shell() {
         {showSetup ? (
           <SetupScreen onDone={() => setSetupOpen(false)} />
         ) : tab === "home" ? (
-          <HomeScreen onScan={() => setTab("scan")} />
+          <HomeScreen onGo={setTab} />
         ) : tab === "talk" ? (
-          <TalkScreen />
+          <TalkScreen incoming={shared} onIncomingRead={() => setShared(null)} />
         ) : tab === "scan" ? (
           <ScanScreen onSaved={() => setTab("home")} />
         ) : tab === "ask" ? (

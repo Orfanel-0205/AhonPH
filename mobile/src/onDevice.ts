@@ -23,6 +23,18 @@ export const TRAVELER_LANGUAGES: { code: string; label: string }[] = [
 const SUPPORTED_SOURCES = new Set(["en", "tl", "ko", "ja", "zh", "es", "fr", "de", "id", "ms", "vi", "th", "ar"]);
 
 /** Detects the language of scanned text on-device; Filipino text is reported as "tl". */
+/** Calls back with text shared to KitaPH from another app (now, if the share opened the app, and later). */
+export function onSharedText(cb: (text: string) => void): () => void {
+  if (!OnDevice) return () => {};
+  const take = () => {
+    const text = OnDevice?.takeSharedText();
+    if (text) cb(text);
+  };
+  take();
+  const sub = OnDevice.addListener("onSharedText", take);
+  return () => sub.remove();
+}
+
 export async function detectLanguage(text: string): Promise<string> {
   if (!OnDevice) return "en";
   try {

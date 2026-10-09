@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { AppData, CurrencyCode } from "./shared";
+import type { AppData, CurrencyCode, TripPlan } from "./shared";
 
 const DATA_KEY = "kitaph:v1";
 const SETTINGS_KEY = "kitaph:settings";
@@ -21,6 +21,8 @@ export interface Settings {
   /** Accommodation, shown to drivers in the local language. */
   stayName: string;
   stayAddress: string;
+  /** Trip budget; expenses dated inside the trip count against it. */
+  trip: TripPlan | null;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -33,6 +35,7 @@ const DEFAULT_SETTINGS: Settings = {
   tripCurrency: null,
   stayName: "",
   stayAddress: "",
+  trip: null,
 };
 
 interface Store {

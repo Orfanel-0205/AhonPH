@@ -24,6 +24,7 @@ import {
   type Insight,
   type ParsedRecord,
 } from "../shared";
+import { TripCard } from "../TripBudget";
 import { newId, useStore } from "../store";
 import { C, S } from "../theme";
 
@@ -161,6 +162,7 @@ export function AskScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
         </Pressable>
       )}
 
+      <TripCard compact />
       <QuickLog engine={engine} onSave={saveRecords} tripCurrency={settings.tripCurrency} meLang={settings.meLang} onTripCurrency={(c) => setSettings({ tripCurrency: c })} />
       <Advisor key={engine.id} engine={engine} context={context} />
       <HubCard

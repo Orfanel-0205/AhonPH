@@ -6,7 +6,7 @@ import type { OcrLine } from "./shared";
  * Temporary, for tuning the receipt reader on real receipts during the hackathon: writes what the
  * phone read to the device log (adb logcat). Set to false before the final build.
  */
-const DEBUG_OCR = true;
+const DEBUG_OCR = false;
 
 function logOcr(lines: OcrLine[]) {
   const compact = lines.map((l) => [l.text, l.frame ? [Math.round(l.frame.left), Math.round(l.frame.top), Math.round(l.frame.width), Math.round(l.frame.height)] : null, l.corners?.map((c) => [Math.round(c.x), Math.round(c.y)]) ?? null]);

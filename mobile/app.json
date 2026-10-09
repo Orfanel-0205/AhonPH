@@ -17,7 +17,14 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "ph.kitaph.app"
+      "package": "ph.kitaph.app",
+      "intentFilters": [
+        {
+          "action": "SEND",
+          "category": ["DEFAULT"],
+          "data": [{ "mimeType": "text/plain" }]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -59,6 +66,6 @@
         }
       ]
     ],
-    "description": "Private money assistant for Filipino workers: on-device receipt reading, Taglish AI and traveler translation that work offline."
+    "description": "Offline travel companion for Filipinos abroad: talk with locals, read menus and signs, and track spending, with AI that runs on the phone."
   }
 }

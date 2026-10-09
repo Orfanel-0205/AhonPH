@@ -1,5 +1,6 @@
 package ph.kitaph.ondevice
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -50,6 +51,16 @@ class KitaOnDeviceModule : Module() {
     LanguageIdentification.getClient(LanguageIdentificationOptions.Builder().setConfidenceThreshold(0.5f).build())
   }
 
+  /** Text shared to KitaPH (e.g. a host's message from a chat app) while the app was already open. */
+  private var pendingShare: String? = null
+
+  private fun sharedText(intent: Intent?): String? =
+    if (intent?.action == Intent.ACTION_SEND && intent.type?.startsWith("text/") == true) {
+      intent.getStringExtra(Intent.EXTRA_TEXT)?.trim()?.takeIf { it.isNotEmpty() }?.take(1000)
+    } else {
+      null
+    }
+
   /** Decodes a photo at a size the on-device model can handle, without loading the full-resolution image. */
   private fun loadBitmap(uri: String, maxSide: Int): Bitmap {
     val ctx = appContext.reactContext ?: throw CodedException("App context unavailable")
@@ -74,7 +85,25 @@ class KitaOnDeviceModule : Module() {
 
   override fun definition() = ModuleDefinition {
     Name("KitaOnDevice")
-    Events("onNanoDownload", "onNanoText")
+    Events("onNanoDownload", "onNanoText", "onSharedText")
+
+    // ---------- Share to KitaPH ----------
+
+    OnNewIntent { intent ->
+      sharedText(intent)?.let {
+        pendingShare = it
+        sendEvent("onSharedText", mapOf("text" to it))
+      }
+    }
+
+    /** Returns shared text once: from a share that started the app, or one that arrived while it was open. */
+    Function("takeSharedText") {
+      val launch = appContext.currentActivity?.intent
+      val fromLaunch = sharedText(launch)?.also { launch?.removeExtra(Intent.EXTRA_TEXT) }
+      val text = pendingShare ?: fromLaunch
+      pendingShare = null
+      text
+    }
 
     OnDestroy {
       translators.values.forEach { it.close() }

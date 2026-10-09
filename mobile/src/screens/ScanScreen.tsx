@@ -4,7 +4,7 @@ import { Image, Pressable, ScrollView, Text, TextInput, View } from "react-nativ
 import { BarRow, Button, Card, Chip, ErrorBox, H2, InsightCard, Muted, Pill, styles } from "../components";
 import { ExplainReceipt, receiptContext } from "../ExplainReceipt";
 import { hubReceipt } from "../hub";
-import { phoneReadReceipt } from "../nanoEngine";
+import { phoneExplainDishes, phoneReadReceipt } from "../nanoEngine";
 import { useNano } from "../nanoStore";
 import { recognizeText, type OcrResult } from "../native";
 import { detectLanguage, downloadedLanguages, prepareTranslation, translateTexts, TRAVELER_LANGUAGES } from "../onDevice";
@@ -360,6 +360,30 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
   const [translated, setTranslated] = useState<{ lang: string; labels: string[]; text: string; notes: ChargeNote[]; ms: number } | null>(null);
   const [phase, setPhase] = useState<"idle" | "downloading" | "translating">("idle");
   const [error, setError] = useState<string | null>(null);
+  const nano = useNano();
+  const [dishes, setDishes] = useState<{ name: string; note: string }[] | null>(null);
+  const [dishBusy, setDishBusy] = useState(false);
+
+  /** Gemini Nano explains the dishes (in English, its strongest language), then the phone translates. */
+  async function explainDishes() {
+    if (!source) return;
+    setDishBusy(true);
+    try {
+      const labels = priced.map((p) => p.label);
+      const english = source === "en" ? labels : (await translateTexts(labels, source, "en")).texts;
+      let out = await phoneExplainDishes(english);
+      const reader = settings.meLang;
+      if (out.length && reader !== "en") {
+        const t = await translateTexts(out.map((d) => d.note), "en", reader);
+        out = out.map((d, i) => ({ ...d, note: t.texts[i] ?? d.note }));
+      }
+      setDishes(out);
+    } catch (e) {
+      setError(`Couldn't explain the dishes: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setDishBusy(false);
+    }
+  }
 
   useEffect(() => {
     detectLanguage(rows.join("\n")).then((src) => {
@@ -494,6 +518,25 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
             </View>
           )}
           <Muted style={{ marginTop: S.sm }}>Approximate, using {FX.source}. Money changers and cards use different rates.</Muted>
+        </Card>
+      ) : null}
+
+      {priced.length && nano.status === "available" && source !== "tl" ? (
+        <Card>
+          <H2>Ano ang mga ito?</H2>
+          {dishes === null ? (
+            <Button label="Explain the dishes (Gemini Nano, on this phone)" icon="sparkles" variant="secondary" onPress={explainDishes} busy={dishBusy} />
+          ) : dishes.length === 0 ? (
+            <Muted>Gemini Nano couldn&apos;t explain these items.</Muted>
+          ) : (
+            dishes.map((d) => (
+              <View key={d.name} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.surface2 }}>
+                <Text style={{ fontSize: 14, fontWeight: "700", color: C.text }}>{d.name}</Text>
+                <Text style={{ fontSize: 14, color: C.text, marginTop: 2 }}>{d.note}</Text>
+              </View>
+            ))
+          )}
+          <Muted style={{ marginTop: S.sm }}>AI guess made on this phone. If you have allergies or avoid pork, ask the staff.</Muted>
         </Card>
       ) : null}
 

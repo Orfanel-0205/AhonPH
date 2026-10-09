@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useMemo, useState, type ComponentProps } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BarRow, Button, Card, Chip, H2, InsightCard, Muted, Pill, Stat, styles } from "../components";
@@ -23,6 +24,7 @@ import {
   type Receipt,
 } from "../shared";
 import { ExplainReceipt, receiptContext } from "../ExplainReceipt";
+import { TripCard } from "../TripBudget";
 import { useStore } from "../store";
 import { C, S } from "../theme";
 
@@ -32,7 +34,43 @@ const PERIODS: { kind: PeriodKind; label: string }[] = [
   { kind: "lastMonth", label: "Last month" },
 ];
 
-export function HomeScreen({ onScan }: { onScan: () => void }) {
+type Go = (tab: "talk" | "scan" | "ask") => void;
+
+/** One-tap entry points for the three things a traveler does most. */
+function QuickActions({ onGo }: { onGo: Go }) {
+  const actions: { tab: Parameters<Go>[0]; icon: ComponentProps<typeof Ionicons>["name"]; label: string; sub: string }[] = [
+    { tab: "talk", icon: "chatbox-ellipses", label: "Usap", sub: "Talk & reply" },
+    { tab: "scan", icon: "scan", label: "Scan", sub: "Menu, sign, receipt" },
+    { tab: "ask", icon: "mic", label: "Gastos", sub: "Say what you spent" },
+  ];
+  return (
+    <View style={{ flexDirection: "row", gap: S.sm, marginBottom: S.md }}>
+      {actions.map((a) => (
+        <Pressable
+          key={a.tab}
+          onPress={() => onGo(a.tab)}
+          accessibilityRole="button"
+          accessibilityLabel={`${a.label}: ${a.sub}`}
+          style={({ pressed }) => ({
+            flex: 1,
+            padding: S.md,
+            borderRadius: 14,
+            backgroundColor: pressed ? C.brandSoft : C.surface,
+            borderWidth: 1,
+            borderColor: C.border,
+            gap: 4,
+          })}
+        >
+          <Ionicons name={a.icon} size={22} color={C.brand} />
+          <Text style={{ fontSize: 15, fontWeight: "800", color: C.text }}>{a.label}</Text>
+          <Text style={{ fontSize: 12, color: C.muted }}>{a.sub}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+export function HomeScreen({ onGo }: { onGo: Go }) {
   const { data, update } = useStore();
   const [kind, setKind] = useState<PeriodKind>("last30");
   const today = todayISO();
@@ -54,12 +92,15 @@ export function HomeScreen({ onScan }: { onScan: () => void }) {
       <ScrollView contentContainerStyle={styles.screen}>
         <Text style={styles.title}>Kumusta! 👋</Text>
         <Muted style={{ marginTop: S.xs, marginBottom: S.lg }}>
-          KitaPH reads your receipts and explains where your money goes. The AI runs on this phone, so your finances never leave it.
+          Your travel buddy abroad: talk with locals, read menus and signs, and keep your trip budget on track. The AI runs on this phone, so it works offline and
+          your data never leaves it.
         </Muted>
+        <QuickActions onGo={onGo} />
+        <TripCard />
         <Card>
-          <H2>Start here</H2>
+          <H2>Money at home</H2>
           <View style={{ gap: S.sm }}>
-            <Button label="Scan a receipt" icon="scan" onPress={onScan} />
+            <Button label="Scan a receipt" icon="scan" onPress={() => onGo("scan")} />
             <Button label={`Try sample data (${SAMPLE_PERSONA.name})`} icon="person" variant="secondary" onPress={() => update(() => buildSampleData(today))} />
           </View>
           <Muted style={{ marginTop: S.md }}>{SAMPLE_PERSONA.name}: {SAMPLE_PERSONA.description}</Muted>
@@ -71,6 +112,8 @@ export function HomeScreen({ onScan }: { onScan: () => void }) {
   const max = summary.byCategory[0]?.centavos ?? 1;
   return (
     <ScrollView contentContainerStyle={styles.screen}>
+      <QuickActions onGo={onGo} />
+      <TripCard />
       {data.isSample ? (
         <View style={{ marginBottom: S.md }}>
           <Pill label={`Sample data · ${SAMPLE_PERSONA.name}, ${SAMPLE_PERSONA.description.split("·")[0].trim()}`} tone="info" icon="person" />

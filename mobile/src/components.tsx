@@ -166,6 +166,7 @@ export const styles = StyleSheet.create({
   barFill: { height: 8, backgroundColor: C.brand, borderTopRightRadius: 4, borderBottomRightRadius: 4 },
   row: { flexDirection: "row", alignItems: "center", gap: S.sm },
   wrap: { flexDirection: "row", flexWrap: "wrap", gap: S.sm },
+  label: { fontSize: 14, fontWeight: "700", color: C.text, marginBottom: S.xs },
   input: { borderWidth: 1, borderColor: C.border, borderRadius: 12, backgroundColor: C.surface, paddingHorizontal: S.md, paddingVertical: 10, fontSize: 15, color: C.text, minHeight: 48 },
   screen: { padding: S.lg, paddingBottom: 120 },
   title: { fontSize: 24, fontWeight: "800", color: C.text },

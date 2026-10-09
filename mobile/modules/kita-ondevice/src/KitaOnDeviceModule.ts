@@ -16,6 +16,7 @@ export interface NanoResult {
 type Events = {
   onNanoDownload: (e: { downloaded: number; total?: number }) => void;
   onNanoText: (e: { requestId: string; chunk: string }) => void;
+  onSharedText: (e: { text: string }) => void;
 };
 
 declare class KitaOnDeviceModule extends NativeModule<Events> {
@@ -29,6 +30,7 @@ declare class KitaOnDeviceModule extends NativeModule<Events> {
   prepareTranslation(source: string, target: string): Promise<number>;
   translateBatch(texts: string[], source: string, target: string): Promise<{ texts: string[]; ms: number }>;
   identifyLanguage(text: string): Promise<string>;
+  takeSharedText(): string | null;
 }
 
 /** Null when the native module is missing (e.g. running in Expo Go). */
