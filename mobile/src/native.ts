@@ -19,15 +19,53 @@ export interface OcrResult {
   text: string;
   languages: string[];
   ms: number;
+  script?: OcrScript;
 }
 
-export async function recognizeText(uri: string): Promise<OcrResult> {
+/** ML Kit ships a separate on-device model per writing system; all four are bundled in the APK. */
+export type OcrScript = "latin" | "japanese" | "korean" | "chinese";
+const SCRIPTS: Record<OcrScript, TextRecognitionScript> = {
+  latin: TextRecognitionScript.LATIN,
+  japanese: TextRecognitionScript.JAPANESE,
+  korean: TextRecognitionScript.KOREAN,
+  chinese: TextRecognitionScript.CHINESE,
+};
+export const SCRIPT_LABEL: Record<OcrScript, string> = { latin: "Latin", japanese: "Japanese", korean: "Korean", chinese: "Chinese" };
+
+/** The writing system to try first abroad, from the language you talk to people in, or the trip currency. */
+export function expectedScript(themLang: string, currency: string | null): OcrScript {
+  if (themLang === "ja" || currency === "JPY") return "japanese";
+  if (themLang === "ko" || currency === "KRW") return "korean";
+  if (themLang === "zh" || currency === "CNY" || currency === "TWD" || currency === "HKD") return "chinese";
+  return "latin";
+}
+
+const letters = (t: string) => (t.match(/\p{L}/gu) ?? []).length;
+
+/**
+ * Menus and signs abroad: reads with the expected script's model first. If that finds mostly numbers
+ * (wrong writing system), tries the others and keeps the reading with the most letters.
+ */
+export async function recognizeAnyScript(uri: string, expected: OcrScript): Promise<OcrResult> {
+  const order: OcrScript[] = [expected, ...(["japanese", "chinese", "korean", "latin"] as OcrScript[]).filter((s) => s !== expected)];
   const started = Date.now();
-  const result = await TextRecognition.recognize(uri, TextRecognitionScript.LATIN);
+  let best: OcrResult | null = null;
+  for (const script of order) {
+    const r = await recognizeText(uri, script);
+    if (!best || letters(r.text) > letters(best.text)) best = r;
+    const chars = r.text.replace(/\s/g, "").length;
+    if (chars > 0 && letters(r.text) / chars >= 0.5) break;
+  }
+  return { ...(best as OcrResult), ms: Date.now() - started };
+}
+
+export async function recognizeText(uri: string, script: OcrScript = "latin"): Promise<OcrResult> {
+  const started = Date.now();
+  const result = await TextRecognition.recognize(uri, SCRIPTS[script]);
   const lines: OcrLine[] = result.blocks.flatMap((b) =>
     b.lines.map((l) => ({ text: l.text, frame: l.frame, corners: l.cornerPoints?.map((p) => ({ x: p.x, y: p.y })) })),
   );
   if (DEBUG_OCR) logOcr(lines);
   const languages = [...new Set(result.blocks.flatMap((b) => b.recognizedLanguages.map((l) => l.languageCode)).filter((c) => c && c !== "und"))];
-  return { lines, text: result.text, languages, ms: Date.now() - started };
+  return { lines, text: result.text, languages, ms: Date.now() - started, script };
 }

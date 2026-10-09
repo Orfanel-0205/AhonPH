@@ -4,9 +4,9 @@ import { Image, Pressable, ScrollView, Text, TextInput, View } from "react-nativ
 import { BarRow, Button, Card, Chip, ErrorBox, H2, InsightCard, Muted, Pill, styles } from "../components";
 import { ExplainReceipt, receiptContext } from "../ExplainReceipt";
 import { hubReceipt } from "../hub";
-import { phoneExplainDishes, phoneReadReceipt } from "../nanoEngine";
+import { phoneReadMenu, phoneReadReceipt } from "../nanoEngine";
 import { useNano } from "../nanoStore";
-import { recognizeText, type OcrResult } from "../native";
+import { expectedScript, recognizeAnyScript, recognizeText, SCRIPT_LABEL, type OcrResult } from "../native";
 import { detectLanguage, downloadedLanguages, prepareTranslation, translateTexts, TRAVELER_LANGUAGES } from "../onDevice";
 import {
   breakdownReceipt,
@@ -25,6 +25,9 @@ import {
   formatPct,
   formatPeso,
   FX,
+  isNanoLang,
+  linesToRows,
+  MENU_MAX_LINES,
   parseOcrReceipt,
   receiptTips,
   toCentavos,
@@ -32,6 +35,7 @@ import {
   type ChargeNote,
   type CurrencyCode,
   type ExpenseCategory,
+  type MenuReading,
   type ReceiptItem,
   type ScannedReceipt,
 } from "../shared";
@@ -41,7 +45,9 @@ import { C, S } from "../theme";
 type Mode = "worker" | "traveler";
 
 export function ScanScreen({ onSaved }: { onSaved: () => void }) {
-  const [mode, setMode] = useState<Mode>("worker");
+  const { settings } = useStore();
+  // On a trip, menus and signs come first; at home, receipts.
+  const [mode, setMode] = useState<Mode>(settings.trip ? "traveler" : "worker");
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   /** Size of the photo a cloud OCR service would have needed; KitaPH uploads none of it. */
@@ -70,7 +76,8 @@ export function ScanScreen({ onSaved }: { onSaved: () => void }) {
       setPhotoBytes(res.assets[0].fileSize ?? (b64 ? Math.round((b64.length * 3) / 4) : null));
       setOcr(null);
       setBusy(true);
-      const result = await recognizeText(uri);
+      const result =
+        mode === "traveler" ? await recognizeAnyScript(uri, expectedScript(settings.themLang, settings.tripCurrency)) : await recognizeText(uri);
       if (!result.text.trim()) setError("No text found. Try a sharper, well-lit photo with the whole receipt in view.");
       setOcr(result);
     } catch (e) {
@@ -111,7 +118,13 @@ export function ScanScreen({ onSaved }: { onSaved: () => void }) {
             <Image source={{ uri: imageUri }} style={{ width: 72, height: 96, borderRadius: 8, backgroundColor: C.surface2 }} />
             <View style={{ flex: 1, gap: 6 }}>
               {busy ? <Pill label="Reading on this phone…" icon="hourglass" /> : null}
-              {ocr ? <Pill label={`Read on-device in ${(ocr.ms / 1000).toFixed(1)}s · ML Kit`} tone="good" icon="phone-portrait" /> : null}
+              {ocr ? (
+                <Pill
+                  label={`Read on-device in ${(ocr.ms / 1000).toFixed(1)}s · ML Kit${ocr.script && ocr.script !== "latin" ? ` (${SCRIPT_LABEL[ocr.script]})` : ""}`}
+                  tone="good"
+                  icon="phone-portrait"
+                />
+              ) : null}
               {ocr && photoBytes ? (
                 <Pill label={`0 bytes sent · cloud OCR would need this ${(photoBytes / 1e6).toFixed(1)} MB photo`} tone="good" icon="cloud-offline" />
               ) : null}
@@ -345,7 +358,8 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
   const { settings, setSettings } = useStore();
   const today = todayISO();
   const receipt: ScannedReceipt | null = useMemo(() => parseOcrReceipt(ocr.lines, today), [ocr, today]);
-  const rows = useMemo(() => receipt?.rows ?? ocr.text.split("\n").filter(Boolean), [receipt, ocr]);
+  // A menu has no TOTAL, so the receipt parser gives up; rows still pair each name with its price.
+  const rows = useMemo(() => receipt?.rows ?? linesToRows(ocr.lines), [receipt, ocr]);
   // Prices are in the currency printed on the page, or the trip currency; null means pesos.
   const fromCurrency = useMemo(() => detectCurrency(rows.join(" ")) ?? settings.tripCurrency, [rows, settings.tripCurrency]);
   // A Filipino abroad sees pesos; a visitor in the Philippines sees their own currency.
@@ -361,29 +375,36 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
   const [phase, setPhase] = useState<"idle" | "downloading" | "translating">("idle");
   const [error, setError] = useState<string | null>(null);
   const nano = useNano();
-  const [dishes, setDishes] = useState<{ name: string; note: string }[] | null>(null);
-  const [dishBusy, setDishBusy] = useState(false);
+  const [menu, setMenu] = useState<{ readings: Map<number, MenuReading>; ms: number } | null>(null);
+  const [menuBusy, setMenuBusy] = useState(false);
+  // Priced lines when there are prices (a menu); otherwise the first lines (a sign).
+  const menuLines = useMemo(() => (priced.length ? priced.map((p) => p.label) : rows).slice(0, MENU_MAX_LINES), [priced, rows]);
 
-  /** Gemini Nano explains the dishes (in English, its strongest language), then the phone translates. */
-  async function explainDishes() {
-    if (!source) return;
-    setDishBusy(true);
+  /** Gemini Nano reads the menu from the original text; notes are put into Filipino on the phone if needed. */
+  async function readMenu() {
+    if (!source || menuBusy) return;
+    setMenuBusy(true);
     try {
-      const labels = priced.map((p) => p.label);
-      const english = source === "en" ? labels : (await translateTexts(labels, source, "en")).texts;
-      let out = await phoneExplainDishes(english);
-      const reader = settings.meLang;
-      if (out.length && reader !== "en") {
-        const t = await translateTexts(out.map((d) => d.note), "en", reader);
-        out = out.map((d, i) => ({ ...d, note: t.texts[i] ?? d.note }));
+      const started = Date.now();
+      const r = await phoneReadMenu(menuLines, source, (readings) => setMenu({ readings, ms: Date.now() - started }));
+      if (settings.meLang === "tl" && r.readings.size) {
+        const keys = [...r.readings.keys()].filter((k) => r.readings.get(k)!.note);
+        const t = keys.length ? await translateTexts(keys.map((k) => r.readings.get(k)!.note), "en", "tl") : { texts: [] };
+        keys.forEach((k, i) => r.readings.set(k, { ...r.readings.get(k)!, note: t.texts[i] ?? r.readings.get(k)!.note }));
       }
-      setDishes(out);
+      setMenu(r);
     } catch (e) {
-      setError(`Couldn't explain the dishes: ${e instanceof Error ? e.message : String(e)}`);
+      setError(`Gemini Nano couldn't read the menu: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
-      setDishBusy(false);
+      setMenuBusy(false);
     }
   }
+
+  // Japanese, Korean and Chinese menus: Gemini Nano reads them right away (the offline translator mangles dish names).
+  useEffect(() => {
+    if (source && isNanoLang(source) && nano.status === "available" && !menu && !menuBusy && menuLines.length) readMenu();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source, nano.status]);
 
   useEffect(() => {
     detectLanguage(rows.join("\n")).then((src) => {
@@ -496,8 +517,9 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
           {priced.map((p, i) => (
             <View key={`${p.label}-${i}`} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.surface2, gap: S.sm }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, color: C.text, fontWeight: "600" }}>{showTranslated?.labels[i] ?? p.label}</Text>
-                {showTranslated && showTranslated.labels[i] !== p.label ? <Muted>{p.label}</Muted> : null}
+                <Text style={{ fontSize: 14, color: C.text, fontWeight: "600" }}>{menu?.readings.get(i)?.name ?? showTranslated?.labels[i] ?? p.label}</Text>
+                {menu?.readings.get(i)?.note ? <Text style={{ fontSize: 13, color: C.text, marginTop: 2 }}>{menu.readings.get(i)!.note}</Text> : null}
+                {(menu?.readings.get(i)?.name ?? showTranslated?.labels[i] ?? p.label) !== p.label ? <Muted>{p.label}</Muted> : null}
               </View>
               <View style={{ alignItems: "flex-end" }}>
                 <Text style={{ fontSize: 15, color: C.brandStrong, fontWeight: "700" }}>{p.converted}</Text>
@@ -521,22 +543,33 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
         </Card>
       ) : null}
 
-      {priced.length && nano.status === "available" && source !== "tl" ? (
+      {nano.status === "available" && source && source !== "tl" && menuLines.length ? (
         <Card>
-          <H2>Ano ang mga ito?</H2>
-          {dishes === null ? (
-            <Button label="Explain the dishes (Gemini Nano, on this phone)" icon="sparkles" variant="secondary" onPress={explainDishes} busy={dishBusy} />
-          ) : dishes.length === 0 ? (
-            <Muted>Gemini Nano couldn&apos;t explain these items.</Muted>
+          <H2>✨ Ano ang mga ito? · Gemini Nano</H2>
+          {menuBusy && !menu?.readings.size ? (
+            <Muted>Gemini Nano is reading the {priced.length ? "menu" : "sign"} on this phone…</Muted>
+          ) : menu ? (
+            priced.length ? (
+              <Muted>
+                {menuBusy
+                  ? `Reading… ${menu.readings.size} of ${menuLines.length} so far; they appear in the price list above.`
+                  : `${menu.readings.size} of ${menuLines.length} read in ${(menu.ms / 1000).toFixed(1)}s on this phone; names and notes are in the price list above.`}
+              </Muted>
+            ) : (
+              menuLines.map((l, i) =>
+                menu.readings.get(i) ? (
+                  <View key={`${l}-${i}`} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.surface2 }}>
+                    <Text style={{ fontSize: 14, fontWeight: "700", color: C.text }}>{menu.readings.get(i)!.name}</Text>
+                    {menu.readings.get(i)!.note ? <Text style={{ fontSize: 14, color: C.text, marginTop: 2 }}>{menu.readings.get(i)!.note}</Text> : null}
+                    <Muted>{l}</Muted>
+                  </View>
+                ) : null,
+              )
+            )
           ) : (
-            dishes.map((d) => (
-              <View key={d.name} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.surface2 }}>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: C.text }}>{d.name}</Text>
-                <Text style={{ fontSize: 14, color: C.text, marginTop: 2 }}>{d.note}</Text>
-              </View>
-            ))
+            <Button label={priced.length ? "Explain the dishes" : "Explain this sign"} icon="sparkles" variant="secondary" onPress={readMenu} />
           )}
-          <Muted style={{ marginTop: S.sm }}>AI guess made on this phone. If you have allergies or avoid pork, ask the staff.</Muted>
+          <Muted style={{ marginTop: S.sm }}>AI reading made on this phone. If you have allergies or avoid pork, ask the staff.</Muted>
         </Card>
       ) : null}
 
@@ -549,7 +582,7 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
         </View>
       ) : null}
 
-      {showTranslated?.text ? (
+      {showTranslated?.text && !menu?.readings.size ? (
         <Card>
           <H2>Full translation</H2>
           <Text style={{ fontSize: 14, color: C.text, lineHeight: 21 }}>{showTranslated.text}</Text>

@@ -3,7 +3,7 @@
  * Same prompts and the same code checks as the laptop hub; only the model differs.
  */
 import { nanoGenerate, OnDevice } from "./onDevice";
-import { acceptPolish, acceptReading, acceptTranslation, acceptTripTips, ADVISOR_SYSTEM_PROMPT, advisorUserMessage, COMPACT_RECEIPT_PROMPT, EXPENSE_CATEGORIES, INCOME_CATEGORIES, normalizeQuickLog, parseCompactReceipt, parseSuggestions, polishPrompt, quickLogSystemPrompt, readPrompt, refineWithLocalKnowledge, translatePrompt, tripTipPrompt, type NanoLang, type ParsedRecord, type Scenario } from "./shared";
+import { acceptPolish, acceptReading, acceptTranslation, acceptTripTips, ADVISOR_SYSTEM_PROMPT, advisorUserMessage, COMPACT_RECEIPT_PROMPT, EXPENSE_CATEGORIES, INCOME_CATEGORIES, menuPrompt, normalizeQuickLog, parseCompactReceipt, parseMenuReading, parseSuggestions, polishPrompt, quickLogSystemPrompt, readPrompt, refineWithLocalKnowledge, translatePrompt, tripTipPrompt, type MenuReading, type NanoLang, type ParsedRecord, type Scenario } from "./shared";
 
 export const NANO_LABEL = "Gemini Nano (on-device)";
 
@@ -175,25 +175,22 @@ export async function phoneRead(text: string, from: NanoLang, scenario: Scenario
 }
 
 /**
- * Gemini Nano explains dishes on a foreign menu for a Filipino traveler, in English, one line each.
- * Returns [] when it can't. Shown with a "check with staff" note: it is a model's best guess.
+ * Gemini Nano reads a foreign menu or sign from the original text (ML Kit's word-for-word translation
+ * mangles dish names): an English name and a short note per line. Lines it can't read are left out.
  */
-export async function phoneExplainDishes(names: string[]): Promise<{ name: string; note: string }[]> {
-  const list = names.slice(0, 8);
-  if (!list.length) return [];
-  const prompt = `These dishes are from a restaurant menu (already translated to English):
-${list.map((n, i) => `${i + 1}. ${n}`).join("\n")}
-For each dish, write one short line for a Filipino traveler: what it is, and whether it usually contains pork, beef, seafood or alcohol. If you don't know a dish, write "not sure".
-Format each line exactly as: number. explanation`;
+export async function phoneReadMenu(
+  lines: string[],
+  lang: string,
+  onPartial?: (readings: Map<number, MenuReading>) => void,
+): Promise<{ readings: Map<number, MenuReading>; ms: number }> {
+  if (!lines.length) return { readings: new Map(), ms: 0 };
+  let r: Awaited<ReturnType<typeof nanoGenerate>>;
+  // Streams: each dish shows up as soon as Gemini Nano has written its line.
+  const onText = onPartial && ((soFar: string) => onPartial(parseMenuReading(soFar.slice(0, soFar.lastIndexOf("\n") + 1), lines.length)));
   try {
-    const r = await withOneRetry(() => nanoGenerate(prompt, { temperature: 0.2, maxOutputTokens: 256 }));
-    const notes = new Map<number, string>();
-    for (const line of r.text.split("\n")) {
-      const m = line.match(/^\s*(\d+)[.)]\s*(.+)$/);
-      if (m) notes.set(Number(m[1]), m[2].replace(/\*\*/g, "").trim());
-    }
-    return list.map((name, i) => ({ name, note: notes.get(i + 1) ?? "" })).filter((d) => d.note);
-  } catch {
-    return [];
+    r = await withOneRetry(() => nanoGenerate(menuPrompt(lines, lang), { temperature: 0.1, maxOutputTokens: MAX_OUTPUT_TOKENS, onText }));
+  } catch (e) {
+    throw friendly(e);
   }
+  return { readings: parseMenuReading(r.text, lines.length), ms: r.ms };
 }
