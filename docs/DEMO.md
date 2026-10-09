@@ -1,58 +1,62 @@
 # KitaPH — Demo Day playbook
 
-5 minutes live + 3 minutes Q&A. Show the product; one title slide at most. You need two people on stage: **the traveler** (holds the phone) and **the clerk** (speaks English or Japanese).
+5 minutes live + 3 minutes Q&A. Show the product; one title slide at most. Two people on stage: **the traveler** (holds the phone) and **the clerk** (speaks Japanese or English).
 
 ## Before you go on stage (12:15 PM tech check)
 
 - [ ] Phone charged above 60%, **Do Not Disturb on**, brightness high, volume high (the phone speaks).
-- [ ] Privacy → **If the cloud disappears** shows ✓ for all three rows. Offline speech installed for the clerk's language (Privacy → Offline AI setup). Gemini Nano: Ready.
-- [ ] Usap set to **Ako: Filipino**, **Sila: English** (or 日本語 if the clerk can speak Japanese), situation **Hotel**. Hotel saved under "My stay".
-- [ ] Gastos trip currency set to **JPY**. A Japanese menu photo (or the test menu) ready in the gallery.
+- [ ] Privacy → **If the cloud disappears** shows ✓ for all three rows. Offline speech installed for the clerk's language. Gemini Nano: Ready.
+- [ ] Usap: **Ako: Filipino** (or English), **Sila: 日本語** (or English), situation **Hotel**. Hotel saved under "My stay".
+- [ ] Home: a trip budget set (or **Try a sample trip**, Tokyo, day 3 of 5). Check that "Today you can still spend" is green and under ₱900 so the taxi in step 4 tips it over.
+- [ ] The Japanese test menu (or a real one) in the gallery. A Japanese host message ready to share (a note or a chat message on the phone).
 - [ ] Phone mirrored to the laptop with **scrcpy** over USB (works in airplane mode); laptop on HDMI. Test the projector.
-- [ ] Rehearse the clerk's lines with the phone in the room's noise; speak clearly, close to the phone.
+- [ ] Rehearse the clerk's lines with the room's noise; speak clearly, close to the phone.
 - [ ] Backup: the 1-minute demo video on the laptop.
 
 ## Script (5:00)
 
-**0:00 – 0:40 · The problem.** "Every year, millions of Filipinos land in Tokyo, Seoul, Hong Kong or Dubai — as tourists or OFWs. The first thing that disappears is the internet: no roaming, the pocket Wi-Fi is dead, you're in the subway. And that's exactly when you need to talk to a hotel clerk, a taxi driver, a cashier."
+**0:00 – 0:30 · The problem.** "Millions of Filipinos land in Tokyo, Seoul, Hong Kong or Dubai every year, as tourists or OFWs. The first thing that disappears is the internet: no roaming, a dead pocket Wi-Fi, the subway. That's exactly when you need to talk to a hotel clerk, read a menu, and not overspend."
 
-**0:40 – 1:00 · Make the cloud disappear.** "The challenge asks for AI that stays useful when the cloud disappears. So let's make it disappear." *Turn on airplane mode.* Point at the header: **Offline · AI still on**.
+**0:30 – 0:45 · Make the cloud disappear.** *Turn on airplane mode.* Point at the header: **Offline · AI still on**.
 
-**1:00 – 2:30 · Usap at the hotel (airplane mode).**
-- Clerk taps nothing — the traveler taps **Sila magsalita** and the clerk says: *"Good evening. May I see your passport, please?"*
-- The line appears with its Filipino translation. **Reply bubbles** appear — "Heto po ang pasaporte ko." Say: "Gemini Nano wrote these on the phone. No phrasebook guesswork."
-- Tap a bubble, **edit it** ("…at ang booking ko"), tap **Isalin at sabihin** — the phone says it aloud in English. Tap ⤢ to show it big.
-- Hotel/Taxi → **My stay** → show-to-driver card in the local language, read aloud.
+**0:45 – 2:00 · Usap at the hotel.**
+- Tap **Sila · 日本語**; the clerk says: *「パスポートを見せていただけますか？」* It appears in Filipino, with "✨ read by Gemini Nano".
+- Reply bubbles: "Heto po ang pasaporte ko." Tap it, **edit** it, tap **Isalin at sabihin**. The phone says it in Japanese. Point at **"Means: …"**: "It translates my answer back, so I know it says what I meant."
+- "Our Japanese-speaking teammate found the offline translator stiff, so Gemini Nano now writes Japanese the way people actually say it, and code checks every answer."
+- Share the host's Japanese message to KitaPH: it opens in Usap, read and with replies ready. Tap the share icon on your reply to send it back.
 
-**2:30 – 3:20 · Scan the menu (airplane mode).** Scan → Traveler → the Japanese menu. Detected Japanese, translated to Filipino on the phone, every price **in pesos** ("ラーメン ¥980 ≈ ₱389"). Point at **0 bytes sent**: "A cloud app would upload this photo over roaming you pay for."
+**2:00 – 2:50 · Scan the menu.** Scan → the Japanese menu. Japanese OCR on the phone, every price **in pesos**, and Gemini Nano names each dish as it reads ("Tonkatsu set meal · deep-fried pork cutlet"). Point at the allergy note and **0 bytes sent**.
 
-**3:20 – 4:00 · No receipt? Say it (airplane mode).** Gastos → type or say "taxi 2,300 yen, ramen 980 yen" → **Basahin** → "taxi (¥2,300) −₱913.56". "Your trip budget, in pesos, without a single receipt or byte of data."
+**2:50 – 3:50 · Trip budget, live.** Home: **₱… left, today you can still spend ₱… (≈ ¥…)**. Gastos → say or type "taxi 2,300 yen" → **Basahin** → Save. The card turns red: **"Today is over its share by ₱…"**, and a pace warning appears. Back on Home, tap **Tips from Gemini Nano**: "✓ Checked: every amount comes from your own records. If the AI invents a number, we drop the tip."
 
-**4:00 – 4:40 · Why local, honestly.** Privacy → **If the cloud disappears** card (offline, every row ✓). "Speech, translation, text recognition and Gemini Nano all run on this phone. We measured our Taglish AI on sentences we never tuned for: 12 of 15 fully right on this phone, 14 of 15 with a laptop model — the test is in the app and the repo."
+**3:50 – 4:30 · Why local, honestly.** Privacy → **If the cloud disappears**. "Speech, translation, text recognition and Gemini Nano all run on this phone. We only show numbers we measured: on a Taglish test set we never tuned for, 12 of 15 fully right on this phone, 14 of 15 with a laptop model. The test is in the app and the repo."
 
-**4:40 – 5:00 · Close.** "KitaPH: kahit walang internet, may kausap ka. Even without internet, you can talk, read and keep track. Thank you."
+**4:30 – 5:00 · Close.** "KitaPH: kahit walang internet, may kausap ka, may gabay ka. Even without internet, you can talk, read and stay on budget. Thank you."
 
 ## If something breaks
 
 | Problem | Do this |
 |---|---|
-| Speech doesn't catch the clerk | Clerk speaks closer and slower, or type their line into the box; translation and bubbles still work. |
-| Gemini Nano is slow or errors | Bubbles fall back to the phrasebook automatically; say "KitaPH degrades gracefully." |
+| Speech doesn't catch the clerk | Clerk speaks closer and slower, or tap **Type what they said**. Or share the host message instead. |
+| Gemini Nano is slow or errors | Translation falls back to ML Kit and bubbles to the phrasebook automatically; say "KitaPH degrades gracefully." |
+| Menu reading is slow | Prices in pesos show first; Gemini Nano's names stream in. Keep talking. |
 | Camera won't focus | Scan → Choose from gallery → the saved menu photo. |
 | Mirroring fails | Hold the phone up and narrate, or play the backup video. |
 
 ## Likely judge questions
 
-**Is the AI really on the device?** Yes — airplane mode is on for the whole demo. Speech recognition uses Android's on-device recognizer (we require on-device mode), translation and text recognition are Google ML Kit's on-device models, and replies come from Gemini Nano, the model built into Android. The Privacy screen lists what runs where; the code is public.
+**Is the AI really on the device?** Yes, airplane mode is on for the whole demo. Speech recognition uses Android's on-device recognizer (we require on-device mode), translation and text recognition are Google ML Kit's on-device models, and Gemini Nano is the model built into Android. The Privacy screen lists what runs where; the code is public.
 
-**Why not just use Google Translate offline?** It translates; it doesn't hold the conversation with you. KitaPH suggests what to say next for the situation, lets you edit it, speaks it, keeps your hotel card ready for drivers, and turns prices and spending into pesos for your trip budget — all offline, in one place, built for Filipinos.
+**Why not just use Google Translate offline?** It translates; it doesn't hold the conversation with you. KitaPH reads what was said, suggests what to answer, checks your answer by translating it back, reads menus into dish names in pesos, and keeps your trip budget live, all offline and in one place, built for Filipinos.
 
-**What if a phone can't run Gemini Nano?** Translation, speech, scanning and peso conversion still work. Reply bubbles come from a phrasebook for each situation, and spending logs use keyword rules (9 of 15 on our final test set without any AI).
+**How do you stop the AI from making things up?** The AI proposes and code checks. Japanese from Gemini Nano must be in Japanese script and keep every number, or we use ML Kit. Budget tips can only use amounts the code computed; others are dropped. Receipts must add up to the printed total. Money is computed by tested code, never by the model.
+
+**What if a phone can't run Gemini Nano?** Translation (ML Kit), speech, scanning, pesos and the trip budget still work. Reply bubbles come from the phrasebook, tips come from code, and spending logs use keyword rules (9 of 15 on our final test set without any AI).
 
 **Filipino speech?** Android doesn't offer offline Filipino speech recognition on our test phone, so the traveler types or taps Filipino replies (or speaks English). The other person's language is recognized offline.
 
-**How accurate is it?** Only measured numbers: on a final Taglish test set committed before our last change and scored once, Gemini Nano on this phone got 12 of 15 fully right; Gemma 3 4B on a laptop 14 of 15. Every peso is computed by tested code, not the AI.
+**How accurate is it?** Only measured numbers: on a final Taglish test set committed before our last change and scored once, Gemini Nano on this phone got 12 of 15 fully right and Gemma 3 4B on a laptop 14 of 15. Translations and menu readings are shown with the original and a back-translation so the user can check them; we haven't run a formal translation evaluation.
 
-**What did you build versus reuse?** Built during the hackathon from the Next.js, Expo and Expo-module templates; models and libraries are open or Google-provided and listed in the README.
+**What did you build versus reuse?** Built during the hackathon from the Next.js, Expo and Expo-module templates; models and libraries are Google-provided or open and listed in the README.
 
-**What's next?** Offline packs for more OFW destinations, group trip budgets, reading GCash/remittance receipts, and more situations (clinic, airport, workplace).
+**What's next?** More hand-checked phrases for OFW destinations (Arabic, Cantonese), group trip budgets, airport and clinic situations, and reading remittance receipts.

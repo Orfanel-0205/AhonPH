@@ -110,7 +110,8 @@ export function TalkScreen({ incoming, onIncomingRead }: { incoming?: string | n
    * Nano writes in English, where it is strongest, and ML Kit translates them to Filipino on the phone.
    */
   async function refreshSuggestions(theySaidMe: string, theySaidEn: string, history: Line[]) {
-    const hints = hintReplies(me, theySaidMe);
+    // Match on both readings: hints are keyed in Filipino and English.
+    const hints = hintReplies(me, `${theySaidMe}\n${theySaidEn}`);
     if (nano.status === "available") {
       setThinking(true);
       try {
