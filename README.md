@@ -1,43 +1,53 @@
-# KitaPH — private money assistant for Filipino workers (and travelers)
+# KitaPH — offline travel and money companion for Filipinos abroad
 
-Snap a receipt and KitaPH breaks down where your money went, checks every peso against the printed total, and gives savings tips in Taglish. **All the AI runs on your phone** — receipt reading, the Taglish assistant, translation — so it keeps working in airplane mode and your finances never leave the device. Travelers can scan Tagalog menus, signs and bills to translate them and convert prices offline.
+Abroad, data costs money and the language is a wall. KitaPH helps Filipino travelers and OFWs **talk, read and track money with no internet**:
+
+- **Usap (Talk):** the other person speaks their language; you see it in Filipino or English with **three suggested reply bubbles**. Tap one, edit it, and KitaPH says it aloud in their language. A big-text view and a "show my hotel to the driver" card cover noisy streets and taxis.
+- **Scan:** point at a menu, sign or receipt. KitaPH translates it and shows every price **in pesos**. Receipts are broken down and checked against the printed total.
+- **Gastos:** no receipt? Say or type "taxi 2,300 yen". It is logged in pesos, with a Taglish advisor for your trip budget.
+
+**All the AI runs on the phone** — speech recognition, translation, text recognition and Gemini Nano — so it keeps working in airplane mode, on a plane, in the subway, or without roaming.
 
 Built for the AppBuildersPH Hackathon 2026 (theme: Local AI). Android app + optional laptop hub + optional cloud backup.
 
 ## Why local AI
 
-The challenge: an AI product that stays genuinely useful when the cloud disappears. In airplane mode KitaPH still reads receipts, breaks down spending, logs Taglish entries, explains receipts, shows personal inflation, and translates menus. For minimum-wage workers, a cloud-only version would be:
+The challenge: an AI product that stays genuinely useful when the cloud disappears. Abroad, the cloud often *has* disappeared — no roaming, a dead pocket Wi-Fi, a subway. A cloud-only version would be:
 
-- **Not private:** receipts, salaries, remittances and debts would leave the phone. KitaPH uploads nothing; no account, no cloud AI, no analytics.
-- **Expensive:** each cloud scan uploads a 1–3 MB photo over paid mobile data and costs inference per request. The app shows "0 bytes sent" next to the real photo size on every scan.
-- **Slow or unavailable:** text recognition runs on the phone (each scan shows how long it took) and never depends on signal in the province or roaming abroad.
-- **Close to impossible:** "Presyo" (personal inflation) needs a year of item-level receipts — too personal to hand to a server, natural on your own phone.
+- **Expensive:** roaming or pocket Wi-Fi just to translate a menu or ask a question. KitaPH needs no data after a one-time setup; each scan shows "0 bytes sent" next to the real photo size.
+- **Unavailable when it matters:** at the taxi stand, check-in desk or market stall with no signal. KitaPH works in airplane mode (verified on a POCO X7 Pro).
+- **Not private:** passports, hotel addresses, receipts and spending would be sent to servers. KitaPH keeps them on the phone; no account, no cloud AI, no analytics.
+- **Slow:** a conversation can't wait for uploads over weak signal; on-device speech and translation answer immediately.
 
 ## What runs where
 
 | Feature | Runs on | Model / engine | Internet needed? |
 |---|---|---|---|
-| Read receipts, menus, signs | **Phone** | Google ML Kit Text Recognition v2 (bundled in the APK) | No |
-| Receipt parsing, add-up check, breakdown, savings tips, budgets, personal inflation | **Phone** | KitaPH TypeScript code (unit-tested) | No |
-| Taglish quick-log and money advisor | **Phone** | Gemini Nano, Android's built-in model (AICore), via ML Kit GenAI Prompt API | Once, for Android's model download |
-| Traveler translation + language detection | **Phone** | ML Kit Translation + Language ID | Once per language pack (~30 MB) |
-| Same Taglish features, bigger model (optional) | **User's laptop** over local Wi-Fi | Gemma 3 4B via Ollama | No |
-| High-accuracy receipt vision (optional) | **User's laptop** | Qwen3-VL 2B via Ollama | No |
+| Hear the other person (Usap) | **Phone** | Android on-device speech recognition (`requiresOnDeviceRecognition`) | Once per language pack |
+| Translate speech, menus, signs | **Phone** | Google ML Kit Translation + Language ID | Once per language pack (~30 MB) |
+| Suggested reply bubbles | **Phone** | Gemini Nano (Android AICore, ML Kit GenAI Prompt API); phrasebook when unavailable | Once, for Android's model download |
+| Say your reply aloud | **Phone** | Android text-to-speech | No (offline voices) |
+| Read receipts, menus, price tags | **Phone** | Google ML Kit Text Recognition v2 (bundled) | No |
+| Prices and spending in pesos | **Phone** | KitaPH code + bundled BSP rates (Oct 8, 2026) | No |
+| No-receipt logging ("taxi 2,300 yen"), money advisor | **Phone** | Gemini Nano + KitaPH code checks | No |
+| Receipt breakdown, add-up check, tips, budgets | **Phone** | KitaPH TypeScript code (unit-tested) | No |
+| Bigger Taglish model (optional) | **User's laptop** over local Wi-Fi | Gemma 3 4B via Ollama | No |
 | Rates/PSA refresh, encrypted backup (optional) | KitaPH Cloud | FastAPI on Render + Supabase | Yes |
 
-If a phone can't run Gemini Nano, Kita AI falls back to the laptop hub, then to **basic mode** (keyword rules, no AI), so the app always answers.
+If a phone can't run Gemini Nano, KitaPH falls back to the laptop hub or to rules (phrasebook replies, keyword logging), so it always answers. On our test phone, Android offers offline speech for Japanese, English and German but not Filipino, so travelers type or tap Filipino replies (or speak English).
 
 ## How it works
 
 ```
- Android phone (Expo / React Native + Kotlin native module "KitaOnDevice")
- ┌─────────────────────────────────────────────────────────────────────────┐
- │ Camera → ML Kit OCR → receipt parser → add-up check → breakdown & tips   │
- │ Taglish text → Gemini Nano → JSON → code validation → records            │
- │ Question + numbers computed by code → Gemini Nano → number check         │
- │ Menu photo → ML Kit OCR → language ID → ML Kit translate → BSP rates     │
- │ Data: on-phone storage only                                              │
- └─────────────────────────────────────────────────────────────────────────┘
+ Android phone (Expo / React Native + Kotlin module "KitaOnDevice")
+ ┌──────────────────────────────────────────────────────────────────────────┐
+ │ Usap:  their speech → on-device ASR → ML Kit translate → Gemini Nano      │
+ │        reply bubbles (or phrasebook) → you edit → translate → TTS aloud   │
+ │ Scan:  photo → ML Kit OCR → language ID → translate → prices in pesos     │
+ │        receipt → parser → add-up check → breakdown & tips                 │
+ │ Gastos: "taxi 2,300 yen" → Gemini Nano → code checks → ₱913.56            │
+ │ Data: on-phone storage only                                               │
+ └──────────────────────────────────────────────────────────────────────────┘
         ┆ optional, same Wi-Fi, no internet            ┆ optional, online
         ▼                                              ▼
  KitaPH Hub (Next.js + Ollama, Gemma 3 4B)     KitaPH Cloud (FastAPI + Supabase)
@@ -70,6 +80,8 @@ If a phone can't run Gemini Nano, Kita AI falls back to the laptop hub, then to 
 How to reproduce: phone — in the app, Privacy → Test the on-device AI (runs all 45 sentences; the test paces itself and retries because Android's AICore throttles bursts of requests). Laptop — `node scripts/eval-quicklog.mjs http://localhost:3000 <dev|holdout|final> [raw]`. Basic mode — `npx vitest run src/lib/basicParse.test.ts --reporter=verbose`.
 
 Caveats: we wrote all sentences ourselves; the "pinadala" family rule in `src/lib/ai.ts` was added after a dev-set failure; small sets, so treat these as indicative.
+
+**Verified on a POCO X7 Pro in airplane mode (Oct 9, 2026, ~10:45 PM):** Usap translated "Anong oras po ang check-out?" to 「チェックアウトは何時ですか？」 and read it aloud; Gemini Nano logged "kape 450 yen" as ₱178.74 (¥450) in 5.9 s; the header switched to "Offline · AI still on". Offline speech recognition starts on the phone for installed languages (ja-JP, en-GB); an end-to-end test with a live speaker is still to be done before the demo.
 
 **Other checks.** Receipt vision with Qwen3-VL 2B on the hub read 1 synthetic receipt exactly (one generated image only). The on-device receipt reader is unit-tested on hand-built OCR layouts and has been run on the phone with our labeled test images; accuracy on real receipts has not been measured yet. Unit tests: `npm test` (68) and `cd cloud && pytest` (5).
 
@@ -122,12 +134,13 @@ Deploy with `render.yaml` (Render Blueprint); set `SUPABASE_URL` and `SUPABASE_A
 
 ## Disclosures
 
-- **Models:** Gemini Nano (Android AICore; ML Kit GenAI Prompt API 1.0.0-beta2); Google ML Kit Text Recognition v2, Translation 17.0.3, Language ID 17.0.6; optional hub: Gemma 3 4B and Qwen3-VL 2B via Ollama. Evaluated, not used: Llama 3.2 3B, Gemma 3 1B, Qwen3 1.7B.
-- **Frameworks and libraries:** Expo SDK 57, React Native 0.86, Expo Modules API (Kotlin), expo-image-picker, expo-network, AsyncStorage, `@react-native-ml-kit/text-recognition`; Next.js 16, React 19, Tailwind CSS 4, Vitest; FastAPI, httpx, uvicorn, pytest.
-- **APIs and cloud services:** Android AICore and Google ML Kit (on-device). Optional and secondary: Render and Supabase. No cloud AI APIs.
+- **Models:** Gemini Nano (Android AICore; ML Kit GenAI Prompt API 1.0.0-beta2); Google ML Kit Text Recognition v2, Translation 17.0.3, Language ID 17.0.6; Android on-device speech recognition and text-to-speech (Speech Services by Google / Android System Intelligence); optional hub: Gemma 3 4B and Qwen3-VL 2B via Ollama. Evaluated, not used: Llama 3.2 3B, Gemma 3 1B, Qwen3 1.7B.
+- **Frameworks and libraries:** Expo SDK 57, React Native 0.86, Expo Modules API (Kotlin), expo-image-picker, expo-network, expo-speech, expo-speech-recognition, AsyncStorage, `@react-native-ml-kit/text-recognition`; Next.js 16, React 19, Tailwind CSS 4, Vitest; FastAPI, httpx, uvicorn, pytest.
+- **APIs and cloud services:** Android AICore, Android speech services and Google ML Kit (all on-device). Optional and secondary: Render and Supabase. No cloud AI APIs.
 - **Existing code and assets:** scaffolds from `create-next-app`, `create-expo-app` (blank TypeScript, MIT) and `create-expo-module`. Everything else — code, app icon, test images — was made during the hackathon (git history from Oct 9, 2026, 2:38 PM).
 - **AI development tools:** Claude Code (Anthropic).
-- **Inspiration only:** PopLingo inspired traveler mode; none of its code or services are used.
+- **Inspiration only:** PopLingo inspired the read-and-translate idea; none of its code or services are used.
+- **Exchange rates:** BSP Reference Exchange Rate Bulletin, Oct 8, 2026, for 19 currencies including JPY, KRW, HKD, SGD, TWD, THB, VND, MYR, IDR, AED, SAR, QAR and KWD.
 
 ## Repository layout
 

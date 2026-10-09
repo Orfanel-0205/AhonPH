@@ -1,68 +1,58 @@
 # KitaPH — Demo Day playbook
 
-5 minutes live + 3 minutes Q&A. Show the product; slides are optional (one title slide at most).
+5 minutes live + 3 minutes Q&A. Show the product; one title slide at most. You need two people on stage: **the traveler** (holds the phone) and **the clerk** (speaks English or Japanese).
 
-## Before you go on stage (do this at the 12:15 PM tech check)
+## Before you go on stage (12:15 PM tech check)
 
-- [ ] Phone charged above 60%, Do Not Disturb on, brightness high.
-- [ ] KitaPH setup finished: Privacy shows **Gemini Nano: Ready** and the language packs you will demo (Tagalog + Korean, or your chosen language) are downloaded.
-- [ ] Data ready: either your own real receipts, or **Privacy → Load sample data** (Joy). Decide which, and practice with it.
-- [ ] Two printed or real receipts and one Tagalog menu in your pocket (the test images in `KitaPH-test` on the phone are the backup).
-- [ ] Phone screen mirrored to the laptop with **scrcpy** over USB (works in airplane mode), laptop on HDMI. Test the projector.
-- [ ] Optional: laptop hub running (`npx next start -H 0.0.0.0 -p 3000`) in case you want to show the bigger model.
-- [ ] Backup: the 1-minute demo video on the laptop, ready to play.
+- [ ] Phone charged above 60%, **Do Not Disturb on**, brightness high, volume high (the phone speaks).
+- [ ] Privacy → **If the cloud disappears** shows ✓ for all three rows. Offline speech installed for the clerk's language (Privacy → Offline AI setup). Gemini Nano: Ready.
+- [ ] Usap set to **Ako: Filipino**, **Sila: English** (or 日本語 if the clerk can speak Japanese), situation **Hotel**. Hotel saved under "My stay".
+- [ ] Gastos trip currency set to **JPY**. A Japanese menu photo (or the test menu) ready in the gallery.
+- [ ] Phone mirrored to the laptop with **scrcpy** over USB (works in airplane mode); laptop on HDMI. Test the projector.
+- [ ] Rehearse the clerk's lines with the phone in the room's noise; speak clearly, close to the phone.
+- [ ] Backup: the 1-minute demo video on the laptop.
 
 ## Script (5:00)
 
-**0:00 – 0:40 · The problem.** "Meet Joy. Service crew in Makati, ₱755 a day, the new NCR minimum wage. Last month she spent 98% of what she earned and couldn't say where it went. Prices are up 7.2% this September; rice is up 20.3% (PSA). Budgeting apps want her bank login, a data plan, and her trust. She has none of those to spare."
+**0:00 – 0:40 · The problem.** "Every year, millions of Filipinos land in Tokyo, Seoul, Hong Kong or Dubai — as tourists or OFWs. The first thing that disappears is the internet: no roaming, the pocket Wi-Fi is dead, you're in the subway. And that's exactly when you need to talk to a hotel clerk, a taxi driver, a cashier."
 
-**0:40 – 1:00 · The promise.** "The challenge asks for AI that stays useful when the cloud disappears. So let's make it disappear." *Turn on airplane mode now.* Point at the header: **Offline · AI still on**. "KitaPH reads Joy's receipts and answers her in Taglish — all on this phone."
+**0:40 – 1:00 · Make the cloud disappear.** "The challenge asks for AI that stays useful when the cloud disappears. So let's make it disappear." *Turn on airplane mode.* Point at the header: **Offline · AI still on**.
 
-**1:00 – 2:10 · Scan a receipt (live, airplane mode).** Scan → photo of a real receipt.
-- Read the time on the pill ("Read on-device in …s"). Point at **Items add up to the TOTAL ✓**: "The AI reads; plain code checks every peso."
-- Point at **0 bytes sent · cloud OCR would need this X MB photo**: "On load she pays for, a cloud app would upload this. KitaPH sends nothing."
-- Show the breakdown and the tips: cheaper store from her own past receipts, price change since last purchase, rice inflation.
-- Save.
+**1:00 – 2:30 · Usap at the hotel (airplane mode).**
+- Clerk taps nothing — the traveler taps **Sila magsalita** and the clerk says: *"Good evening. May I see your passport, please?"*
+- The line appears with its Filipino translation. **Reply bubbles** appear — "Heto po ang pasaporte ko." Say: "Gemini Nano wrote these on the phone. No phrasebook guesswork."
+- Tap a bubble, **edit it** ("…at ang booking ko"), tap **Isalin at sabihin** — the phone says it aloud in English. Tap ⤢ to show it big.
+- Hotel/Taxi → **My stay** → show-to-driver card in the local language, read aloud.
 
-**2:10 – 3:10 · Kita AI (still airplane mode).** Kita AI tab, engine **This phone**.
-- Type: `jeep 26, lunch 95, load 50 sa Globe, pinadala ko kay mama 2k` → Basahin → records appear (family padala correctly an expense).
-- Tap **Paano ako makakatipid sa susunod na buwan?** → the answer streams in Taglish.
-- Point at **All numbers match your records ✓**: "If the AI ever invents a peso amount, KitaPH flags it."
+**2:30 – 3:20 · Scan the menu (airplane mode).** Scan → Traveler → the Japanese menu. Detected Japanese, translated to Filipino on the phone, every price **in pesos** ("ラーメン ¥980 ≈ ₱389"). Point at **0 bytes sent**: "A cloud app would upload this photo over roaming you pay for."
 
-**3:10 – 3:50 · Traveler mode.** Scan → Traveler → photo of a Tagalog menu.
-- Auto-detects Filipino, translates to Korean on the phone, converts prices to won with BSP rates, explains that service charge goes 100% to staff by law (RA 11360).
+**3:20 – 4:00 · No receipt? Say it (airplane mode).** Gastos → type or say "taxi 2,300 yen, ramen 980 yen" → **Basahin** → "taxi (¥2,300) −₱913.56". "Your trip budget, in pesos, without a single receipt or byte of data."
 
-**3:50 – 4:30 · Why local matters.** Privacy tab → **If the cloud disappears** card (still offline: every row ✓). Then Home → **Presyo**: "Her personal inflation is 10.7% while the official rate is 7.2% — that needs a year of her receipts, which only makes sense on her own phone."
-- Private: receipts and salaries never leave the phone; no account, no cloud AI.
-- Free: no per-question cloud cost, so it stays free for minimum-wage workers.
-- Offline: works without load or signal — you just watched it.
-- Honest numbers: "We measured it on sentences we never tuned for: on this phone, offline, 12 out of 15 fully right; on the laptop hub, 14 out of 15. Here is the test." (Privacy → Test the on-device AI.)
+**4:00 – 4:40 · Why local, honestly.** Privacy → **If the cloud disappears** card (offline, every row ✓). "Speech, translation, text recognition and Gemini Nano all run on this phone. We measured our Taglish AI on sentences we never tuned for: 12 of 15 fully right on this phone, 14 of 15 with a laptop model — the test is in the app and the repo."
 
-**4:30 – 5:00 · Close.** "KitaPH: pera mo, phone mo, AI mo. Your money, your phone, your AI. Thank you."
+**4:40 – 5:00 · Close.** "KitaPH: kahit walang internet, may kausap ka. Even without internet, you can talk, read and keep track. Thank you."
 
 ## If something breaks
 
 | Problem | Do this |
 |---|---|
-| Gemini Nano errors or is slow | Kita AI → switch engine chip to **Laptop hub** (needs the same Wi-Fi as the laptop) or **Basic mode**. Say: "KitaPH falls back gracefully." |
-| Camera won't focus | Scan → **Choose from gallery** → `KitaPH-test` album. |
-| Translation pack missing | Use English as the target (always on the phone) or skip traveler mode. |
-| Projector/mirroring fails | Hold the phone up to the camera and narrate, or play the backup video. |
+| Speech doesn't catch the clerk | Clerk speaks closer and slower, or type their line into the box; translation and bubbles still work. |
+| Gemini Nano is slow or errors | Bubbles fall back to the phrasebook automatically; say "KitaPH degrades gracefully." |
+| Camera won't focus | Scan → Choose from gallery → the saved menu photo. |
+| Mirroring fails | Hold the phone up and narrate, or play the backup video. |
 
 ## Likely judge questions
 
-**Is the AI really on the device?** Yes. Airplane mode is on during the demo. Receipt reading and translation use Google ML Kit's on-device models; Taglish chat uses Gemini Nano, the model built into Android (AICore). The Privacy screen lists what runs where, and the code is public.
+**Is the AI really on the device?** Yes — airplane mode is on for the whole demo. Speech recognition uses Android's on-device recognizer (we require on-device mode), translation and text recognition are Google ML Kit's on-device models, and replies come from Gemini Nano, the model built into Android. The Privacy screen lists what runs where; the code is public.
 
-**What if a phone doesn't have Gemini Nano?** Receipt reading, breakdowns, tips and traveler mode work on any Android phone. For Taglish chat, KitaPH can use a laptop "hub" running Gemma 3 4B on the same Wi-Fi (no internet), or basic mode (keyword rules, 9 of 15 on the final set).
+**Why not just use Google Translate offline?** It translates; it doesn't hold the conversation with you. KitaPH suggests what to say next for the situation, lets you edit it, speaks it, keeps your hotel card ready for drivers, and turns prices and spending into pesos for your trip budget — all offline, in one place, built for Filipinos.
 
-**How accurate is it?** We only quote what we measured, on a final test set committed before our last improvement and scored once: Gemini Nano on this phone got 12 of 15 Taglish sentences fully right (8 from the model alone, the rest from our local keyword knowledge); Gemma 3 4B on a laptop got 14 of 15. Receipt reading is checked against the printed total every time, and nothing is saved until the user confirms.
+**What if a phone can't run Gemini Nano?** Translation, speech, scanning and peso conversion still work. Reply bubbles come from a phrasebook for each situation, and spending logs use keyword rules (9 of 15 on our final test set without any AI).
 
-**How do you stop the AI from making up numbers?** The AI never does math. Totals, budgets and tips are computed by tested code (62 unit tests, plus 5 for the cloud service). The AI only explains, and every peso amount in its answer is checked against the user's records.
+**Filipino speech?** Android doesn't offer offline Filipino speech recognition on our test phone, so the traveler types or taps Filipino replies (or speaks English). The other person's language is recognized offline.
 
-**Why not just use the cloud?** Because the people who need this most can't afford data or trust a server with their receipts and salary. Local AI also costs nothing per question.
+**How accurate is it?** Only measured numbers: on a final Taglish test set committed before our last change and scored once, Gemini Nano on this phone got 12 of 15 fully right; Gemma 3 4B on a laptop 14 of 15. Every peso is computed by tested code, not the AI.
 
-**Where do the economic numbers come from?** PSA September 2026 inflation (released Oct 6), DOLE Wage Order NCR-28, and the BSP reference rates of Oct 8, 2026, bundled with their dates.
+**What did you build versus reuse?** Built during the hackathon from the Next.js, Expo and Expo-module templates; models and libraries are open or Google-provided and listed in the README.
 
-**What did you build versus reuse?** Everything was built during the hackathon from the `create-next-app` and `create-expo-app` templates. Models and libraries are open or Google-provided and are listed in the README.
-
-**What's next?** MSME mode for sari-sari stores, Bisaya and Ilocano, reading GCash/Maya SMS on-device, and an opt-in anonymous community price index.
+**What's next?** Offline packs for more OFW destinations, group trip budgets, reading GCash/remittance receipts, and more situations (clinic, airport, workplace).
