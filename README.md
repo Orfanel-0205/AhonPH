@@ -8,6 +8,7 @@ Abroad, data costs money and the language is a wall. LakbayMate helps Filipino t
 - **Scan:** point at a menu, sign or receipt. LakbayMate reads Latin, Japanese, Korean and Chinese text on the phone, shows every price **in pesos**, and **Gemini Nano names each dish** with a short note (pork, beef, seafood, alcohol). Receipts are broken down and checked against the printed total.
 - **Trip budget:** set a peso budget for the trip. Everything you scan, say or type ("taxi 2,300 yen") updates it **immediately**: what's left, **what you can still spend today** in pesos and yen, your pace, and tips. Tips are computed by code; Gemini Nano can add tips in its own words, and any tip with an amount that isn't in your records is dropped.
 
+- **Plan a trip:** pick a country and city (Tokyo, Osaka, Seoul, Hong Kong, Taipei, Singapore), days, travelers and what you like (food, culture, shopping, views, nature, theme parks, nightlife). LakbayMate builds a day-by-day plan with each area kept together and compares **Tipid**, **Sakto** (a bit pricey) and **Bongga** (splurge) per person in pesos. **Use as my trip budget** turns it into the live trip budget, and the trip card shows today's stops. The AI can add one tip per day, kept only if it names that day's places and has no prices.
 - **Hatian (split the bill):** for barkada and family trips. Say who had what in one Taglish sentence ("kay Maria ang karaage, hati kaming lahat sa beer"); the local AI assigns the receipt items, and code computes each person's share in yen and pesos, with tax split by what each ordered, adding up to the total exactly. Share it as text, and save just your share to the trip budget.
 - **Team laptop AI:** a teammate's phone without Gemini Nano joins the team laptop's hotspot and gets every AI feature from the laptop's own model (Gemma 3 4B via Ollama), with the same prompts and code checks. No internet either way.
 - **AI Lab:** one button runs every on-device model live, in ten steps, on a bundled sample receipt and a short conversation. Each step shows its engine, a measured time and the result. At the end, Android's own counters report how many bytes the app sent and received during the run (0 in airplane mode).
@@ -40,6 +41,8 @@ The challenge: an AI product that stays genuinely useful when the cloud disappea
 | Budget tips in plain words | **Phone** | Gemini Nano, checked against computed facts | No |
 | No-receipt logging ("taxi 2,300 yen"), money advisor | **Phone** | Gemini Nano + LakbayMate code checks | No |
 | Receipt breakdown, add-up check, tips | **Phone** | LakbayMate TypeScript code (unit-tested) | No |
+| Trip plans and their costs | **Phone** | LakbayMate code + bundled places and cost estimates | No |
+| A tip for each planned day | **Phone** (or team laptop) | Gemini Nano (or Gemma 3 4B), checked: names that day's places, no prices | No |
 | Who-had-what for bill splits | **Phone** (or team laptop) | Gemini Nano (or Gemma 3 4B) assigns; code computes every share | No |
 | All AI features on phones without Gemini Nano | **Team laptop** over its hotspot / local Wi-Fi | Gemma 3 4B via Ollama (`/api/ai/generate`), same prompts and checks | No |
 | Bigger Taglish model (optional) | **User's laptop** over local Wi-Fi | Gemma 3 4B via Ollama | No |
@@ -127,7 +130,7 @@ Caveats: we wrote all sentences ourselves; the "pinadala" family rule in `src/li
 
 Japanese quality was judged by our team, not formally evaluated. The hand-written Japanese, Korean and Chinese phrases are in `src/lib/talk.ts` for anyone to check.
 
-**Other checks.** Receipt vision with Qwen3-VL 2B on the hub read 1 synthetic receipt exactly (one generated image only). The on-device receipt reader is unit-tested on hand-built OCR layouts and one real phone OCR fixture; accuracy on real receipts has not been measured. Unit tests: `npm test` (146) and `cd cloud && pytest` (5).
+**Other checks.** Receipt vision with Qwen3-VL 2B on the hub read 1 synthetic receipt exactly (one generated image only). The on-device receipt reader is unit-tested on hand-built OCR layouts and one real phone OCR fixture; accuracy on real receipts has not been measured. Unit tests: `npm test` (155) and `cd cloud && pytest` (5).
 
 ## Running it
 
@@ -176,6 +179,7 @@ Deploy with `render.yaml` (Render Blueprint); set `SUPABASE_URL` and `SUPABASE_A
 - Inflation: PSA, CPI (2018=100), September 2026, released Oct 6, 2026 — headline 7.2%, food 6.8%, rice 20.3%, transport 14.6%, housing/utilities 8.4%.
 - Minimum wage: DOLE NWPC / RTWPB-NCR Wage Order No. NCR-28, effective Sep 26, 2026 — ₱755/day non-agriculture.
 - Exchange rates: BSP Reference Exchange Rate Bulletin, Oct 8, 2026 (via taxcalculator.com.ph). Conversions are labeled approximate.
+- **Trip planner places and prices** (`src/lib/itinerary.ts`): chosen and estimated by us during the hackathon from general knowledge, per person, for 2026. They are planning estimates, not live or official prices, and the app says "about" and "check before you go". Flights are not included.
 - The sample persona ("Joy"), the sample Tokyo trip and their prices are illustrative, not survey data.
 
 ## Disclosures

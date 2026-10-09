@@ -31,6 +31,8 @@
 
 **2:50 – 3:50 · Trip budget, live.** Home: **₱… left, today you can still spend ₱… (≈ ¥…)**. Gastos → say or type "taxi 2,300 yen" → **Basahin** → Save. The card turns red: **"Today is over its share by ₱…"**, and a pace warning appears. Back on Home, tap **Tips from Gemini Nano**: "✓ Checked: every amount comes from your own records. If the AI invents a number, we drop the tip."
 
+**Bonus beat if time allows (20 s) · Plan a trip.** Home → **Plan a trip** → Japan, Tokyo, 4 days, Food + Culture → point at **Tipid / Sakto / Bongga** in pesos → **Use as my trip budget**. "The plan becomes the budget, and the budget updates live as you spend."
+
 **Bonus beat if time allows (20 s) · Hatian.** On the scanned receipt tap **Hatian**, add Maria and Jun, type "Kay Maria ang karaage, kay Jun ang yakitori, hati kaming lahat sa beer at edamame, akin ang oyakodon" → **Assign**. "The AI decides who had what; the code decides who pays what, and it adds up to the yen."
 
 **3:50 – 4:30 · Prove it: the AI Lab.** Tap **AI Lab → Run the offline AI demo** and keep talking while it runs (about 30 s). Point at the steps as they turn green: "Japanese OCR in a quarter second. ML Kit says 'give me your accounting by cash register'; Gemini Nano says 'please pay at the register'. The camera read ¥4,895 as 44,895, and our code caught it." End on the summary: **10 of 10 steps, 0 bytes sent, 0 bytes received**, measured by Android itself. "We only show numbers we measured: on a Taglish test set we never tuned for, 12 of 15 fully right on this phone. The test is in the app and the repo."
