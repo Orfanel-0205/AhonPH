@@ -1,0 +1,17 @@
+[
+  { "text": "jeep at MRT papuntang Makati 45", "expected": [ { "type": "expense", "categories": ["transport"], "pesos": 45 } ] },
+  { "text": "almusal sa Jollibee 120", "expected": [ { "type": "expense", "categories": ["food"], "pesos": 120 } ] },
+  { "text": "nagbayad ng kuryente 1,320", "expected": [ { "type": "expense", "categories": ["utilities"], "pesos": 1320 } ] },
+  { "text": "Smart load 99", "expected": [ { "type": "expense", "categories": ["load_internet"], "pesos": 99 } ] },
+  { "text": "hulog sa motor 2,500", "expected": [ { "type": "expense", "categories": ["debt"], "pesos": 2500 } ] },
+  { "text": "vitamins para kay nanay 350", "expected": [ { "type": "expense", "categories": ["health", "family"], "pesos": 350 } ] },
+  { "text": "Lazada order na damit 499", "expected": [ { "type": "expense", "categories": ["personal"], "pesos": 499 } ] },
+  { "text": "inuman kasama tropa 600", "expected": [ { "type": "expense", "categories": ["leisure"], "pesos": 600 } ] },
+  { "text": "tuition ng kapatid ko 3,000", "expected": [ { "type": "expense", "categories": ["education", "family"], "pesos": 3000 } ] },
+  { "text": "boarding house bayad 2,800", "expected": [ { "type": "expense", "categories": ["rent"], "pesos": 2800 } ] },
+  { "text": "sahod ko ngayong kinsenas 8,900", "expected": [ { "type": "income", "categories": ["salary"], "pesos": 8900 } ] },
+  { "text": "binayaran ako ng kapitbahay sa pinagawang damit 350", "expected": [ { "type": "income", "categories": ["sideline", "other_income"], "pesos": 350 } ] },
+  { "text": "nagpadala ako sa probinsya 2,500 at load 50", "expected": [ { "type": "expense", "categories": ["family"], "pesos": 2500 }, { "type": "expense", "categories": ["load_internet"], "pesos": 50 } ] },
+  { "text": "kahapon pamasahe 60 tapos kape 35", "expected": [ { "type": "expense", "categories": ["transport"], "pesos": 60 }, { "type": "expense", "categories": ["food"], "pesos": 35 } ] },
+  { "text": "Okay lang ako, salamat", "expected": [] }
+]
