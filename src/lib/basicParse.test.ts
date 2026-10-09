@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { basicQuickLog } from "./basicParse";
-import { QUICKLOG_CASES, QUICKLOG_HOLDOUT, scoreQuickLog } from "./evalQuicklog";
+import { QUICKLOG_CASES, QUICKLOG_FINAL, QUICKLOG_HOLDOUT, scoreQuickLog } from "./evalQuicklog";
 
 describe("basicQuickLog (no-AI fallback)", () => {
   it("handles a typical message", () => {
@@ -23,7 +23,9 @@ describe("basicQuickLog (no-AI fallback)", () => {
     for (const c of QUICKLOG_CASES) if (scoreQuickLog(c, basicQuickLog(c.text, "2026-10-09")).pass) passed++;
     let held = 0;
     for (const c of QUICKLOG_HOLDOUT) if (scoreQuickLog(c, basicQuickLog(c.text, "2026-10-09")).pass) held++;
-    console.log(`basic mode: dev ${passed}/${QUICKLOG_CASES.length}, held-out ${held}/${QUICKLOG_HOLDOUT.length} sentences`);
+    let fin = 0;
+    for (const c of QUICKLOG_FINAL) if (scoreQuickLog(c, basicQuickLog(c.text, "2026-10-09")).pass) fin++;
+    console.log(`basic mode: dev ${passed}/${QUICKLOG_CASES.length}, held-out ${held}/${QUICKLOG_HOLDOUT.length}, final ${fin}/${QUICKLOG_FINAL.length} sentences`);
     expect(passed).toBeGreaterThan(0);
   });
 });

@@ -35,7 +35,7 @@
 - Private: receipts and salaries never leave the phone; no account, no cloud AI.
 - Free: no per-question cloud cost, so it stays free for minimum-wage workers.
 - Offline: works without load or signal — you just watched it.
-- Honest numbers: "We measured it. On this phone: [fill in after the on-phone test]. Same 15 sentences on the laptop model: 15/15."
+- Honest numbers: "We measured it on sentences we never tuned for: on this phone, offline, 12 out of 15 fully right; on the laptop hub, 14 out of 15. Here is the test." (Privacy → Test the on-device AI.)
 
 **4:30 – 5:00 · Close.** "KitaPH: pera mo, phone mo, AI mo. Your money, your phone, your AI. Thank you."
 
@@ -52,9 +52,9 @@
 
 **Is the AI really on the device?** Yes. Airplane mode is on during the demo. Receipt reading and translation use Google ML Kit's on-device models; Taglish chat uses Gemini Nano, the model built into Android (AICore). The Privacy screen lists what runs where, and the code is public.
 
-**What if a phone doesn't have Gemini Nano?** Receipt reading, breakdowns, tips and traveler mode work on any Android phone. For Taglish chat, KitaPH can use a laptop "hub" running Gemma 3 4B on the same Wi-Fi (no internet), or basic mode (keyword rules, 11/15 on our test set).
+**What if a phone doesn't have Gemini Nano?** Receipt reading, breakdowns, tips and traveler mode work on any Android phone. For Taglish chat, KitaPH can use a laptop "hub" running Gemma 3 4B on the same Wi-Fi (no internet), or basic mode (keyword rules, 9 of 15 on the final set).
 
-**How accurate is it?** We only quote what we measured: Gemma 3 4B on the laptop got 15/15 of our Taglish sentences (14/15 from the model alone; one fixed by a rule). On this phone: [on-phone test result]. Receipt reading is checked against the printed total every time, and nothing is saved until the user confirms.
+**How accurate is it?** We only quote what we measured, on a final test set committed before our last improvement and scored once: Gemini Nano on this phone got 12 of 15 Taglish sentences fully right (8 from the model alone, the rest from our local keyword knowledge); Gemma 3 4B on a laptop got 14 of 15. Receipt reading is checked against the printed total every time, and nothing is saved until the user confirms.
 
 **How do you stop the AI from making up numbers?** The AI never does math. Totals, budgets and tips are computed by tested code (62 unit tests, plus 5 for the cloud service). The AI only explains, and every peso amount in its answer is checked against the user's records.
 

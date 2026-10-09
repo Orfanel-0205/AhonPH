@@ -41,10 +41,14 @@ KitaPH's users are minimum-wage workers whose receipts, salaries, remittances an
 
 ## Measured results (reproducible, no other numbers claimed)
 
-- Taglish quick-log, Gemma 3 4B on the laptop hub: 15/15 sentences, 20/20 records, median 1.6 s (`node scripts/eval-quicklog.mjs`). Model alone 14/15; one case fixed by a code rule added after we saw the failure.
-- Same 15 sentences, Gemini Nano on a POCO X7 Pro: [run Privacy → Test the on-device AI and fill in].
-- Basic mode (no AI, keyword rules): 11/15, written after the test set existed.
-- Phone-sized open models on the same set (laptop, via Ollama): Gemma 3 1B 3/15, Qwen3 1.7B 6/15.
+Taglish quick-log, three sets of 15 sentences (dev; held-out committed before tuning; final committed before the local-knowledge step and scored once). "AI only → AI + local knowledge":
+
+- Gemini Nano on a POCO X7 Pro, offline: dev 10 → 13, held-out 11 → 14, **final 8 → 12 of 15**; median 8.7 s.
+- Gemma 3 4B on the laptop hub: dev 15 → 15, held-out 12 → 14, **final 14 → 14 of 15**; median 2.1 s.
+- Basic mode (no AI): dev 11, held-out 7, final 9 of 15.
+- Phone-sized open models on the dev set (laptop, via Ollama): Gemma 3 1B 3/15, Qwen3 1.7B 6/15 — why we use Android's Gemini Nano instead of shipping a small model.
+
+All sentences were written by us; sets are small, so treat results as indicative. Reproduce with Privacy → Test the on-device AI (phone) and `scripts/eval-quicklog.mjs` (laptop).
 
 ## Suggested post (X / LinkedIn)
 

@@ -51,17 +51,26 @@ If a phone can't run Gemini Nano, Kita AI falls back to the laptop hub, then to 
 
 ## Measured results (reproducible; no other numbers are claimed)
 
-Taglish quick-log test set: 15 sentences in `src/lib/quicklogCases.json`, worded differently from the prompt's examples. Scoring requires every record's type, category and amount to match.
+**Taglish quick-log.** Three sets of 15 sentences in `src/lib/`, each worded differently from the prompt's examples. A sentence counts only if every record's type, category and amount is right.
 
-| Engine | Result | How measured / caveats |
-|---|---|---|
-| Gemma 3 4B, laptop hub (RTX 4050 Laptop) | **15/15 sentences, 20/20 records**, median 1.6 s | `node scripts/eval-quicklog.mjs`. Model alone 14/15; the remaining case is fixed by a code rule added after we saw that failure, so it is not a held-out result. |
-| Gemini Nano, on a POCO X7 Pro | [fill in] | In the app: Privacy → Test the on-device AI (same 15 sentences, same scoring). |
-| Basic mode (no AI) | 11/15 | `npx vitest run src/lib/basicParse.test.ts`. Written after the test set existed. |
-| Gemma 3 1B / Qwen3 1.7B (laptop, via Ollama) | 3/15 / 6/15 | Why we did not ship an open small LLM inside the APK. |
-| Receipt vision, Qwen3-VL 2B (hub) | 1 synthetic receipt read exactly | One generated image only. |
+- **Dev set** (`quicklogCases.json`): seen while building prompts and rules.
+- **Held-out** (`quicklogHoldout.json`): committed at 20:44 on Oct 9, before tuning against on-device results.
+- **Final** (`quicklogFinal.json`): committed at 20:47, *before* the local-knowledge step existed, and scored once per engine.
 
-Unit tests: `npm test` (62, shared logic and hub) and `cd cloud && pytest` (5). The receipt parser tests use hand-built OCR layouts; real-receipt accuracy has been checked on device only on our test images so far.
+"AI only" is the model's validated answer. "AI + local" adds `refineWithLocalKnowledge` (`src/lib/basicParse.ts`): the model finds the amounts, and a keyword dictionary written before any test set corrects categories it recognizes.
+
+| Engine | Dev (AI only → AI + local) | Held-out | **Final** | Median time |
+|---|---|---|---|---|
+| **Gemini Nano, on a POCO X7 Pro** (phone, offline) | 10 → 13 /15 | 11 → 14 /15 | **8 → 12 /15** | 8.7 s |
+| Gemma 3 4B, laptop hub (RTX 4050 Laptop) | 15 → 15 /15 | 12 → 14 /15 | **14 → 14 /15** | 2.1 s |
+| Basic mode (keyword rules, no AI) | 11/15 | 7/15 | 9/15 | instant |
+| Gemma 3 1B / Qwen3 1.7B (laptop, via Ollama, dev only) | 3/15 / 6/15 | — | — | — |
+
+How to reproduce: phone — in the app, Privacy → Test the on-device AI (runs all 45 sentences; the test paces itself and retries because Android's AICore throttles bursts of requests). Laptop — `node scripts/eval-quicklog.mjs http://localhost:3000 <dev|holdout|final> [raw]`. Basic mode — `npx vitest run src/lib/basicParse.test.ts --reporter=verbose`.
+
+Caveats: we wrote all sentences ourselves; the "pinadala" family rule in `src/lib/ai.ts` was added after a dev-set failure; small sets, so treat these as indicative.
+
+**Other checks.** Receipt vision with Qwen3-VL 2B on the hub read 1 synthetic receipt exactly (one generated image only). The on-device receipt reader is unit-tested on hand-built OCR layouts and has been run on the phone with our labeled test images; accuracy on real receipts has not been measured yet. Unit tests: `npm test` (68) and `cd cloud && pytest` (5).
 
 ## Running it
 
