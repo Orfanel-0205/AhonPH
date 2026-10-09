@@ -1,26 +1,78 @@
 @import "tailwindcss";
 
+/* System fonts only: nothing is downloaded, so the app renders identically offline. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #f6f7f4;
+  --surface: #ffffff;
+  --surface-2: #eef1ec;
+  --border: #dde2da;
+  --text: #17201c;
+  --muted: #5d6a63;
+  --brand: #0f7a5c;
+  --brand-strong: #0b5c45;
+  --brand-soft: #e2f3ec;
+  --accent: #c98a12;
+  --good: #1a7f4b;
+  --good-soft: #e3f4ea;
+  --warn: #9a6200;
+  --warn-soft: #fdf1d8;
+  --danger: #b4232f;
+  --danger-soft: #fbe5e7;
+  --info: #285e8f;
+  --info-soft: #e5eef7;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #101413;
+    --surface: #171d1b;
+    --surface-2: #1f2724;
+    --border: #2c3632;
+    --text: #e8eeea;
+    --muted: #9aa8a1;
+    --brand: #3cc497;
+    --brand-strong: #6fd8b3;
+    --brand-soft: #173a2f;
+    --accent: #e8b04a;
+    --good: #5ccf8f;
+    --good-soft: #17352a;
+    --warn: #f0b34a;
+    --warn-soft: #3a2f17;
+    --danger: #f2737d;
+    --danger-soft: #3d1d21;
+    --info: #7db4e6;
+    --info-soft: #1b2c3d;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
 }

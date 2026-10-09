@@ -15,7 +15,7 @@ export const EXPENSE_INFO: Record<ExpenseCategory, CategoryInfo> = {
   utilities: { label: "Bills", tagalog: "Kuryente at tubig", essential: true, hint: "Meralco, electricity, water, Maynilad, Manila Water, LPG/gasul" },
   rent: { label: "Rent", tagalog: "Upa", essential: true, hint: "rent, upa, boarding house, dorm, bedspace" },
   load_internet: { label: "Load & internet", tagalog: "Load", essential: false, hint: "Globe, Smart, TNT, DITO, prepaid load, promo, wifi, PLDT, Converge" },
-  family: { label: "Family support", tagalog: "Padala", essential: true, hint: "padala, pinadala sa probinsya, allowance ng kapatid, bigay kay nanay" },
+  family: { label: "Family support", tagalog: "Padala", essential: true, hint: "nagpadala ako, pinadala sa probinsya, allowance na binigay ko sa kapatid, bigay kay nanay" },
   debt: { label: "Debt payments", tagalog: "Utang", essential: true, hint: "utang, loan, hulugan, Home Credit, credit card, SSS loan, 5-6" },
   health: { label: "Health", tagalog: "Kalusugan", essential: true, hint: "gamot, medicine, check-up, clinic, vitamins" },
   education: { label: "Education", tagalog: "Pag-aaral", essential: true, hint: "tuition, school supplies, baon ng anak, projects" },
@@ -27,7 +27,7 @@ export const EXPENSE_INFO: Record<ExpenseCategory, CategoryInfo> = {
 export const INCOME_INFO: Record<IncomeCategory, { label: string; tagalog: string; hint: string }> = {
   salary: { label: "Salary", tagalog: "Sweldo", hint: "sweldo, sahod, kinsenas, payroll" },
   sideline: { label: "Sideline", tagalog: "Raket", hint: "raket, sideline, online selling, freelance, tip" },
-  allowance: { label: "Allowance / support", tagalog: "Allowance", hint: "allowance, padala received, ayuda, bonus" },
+  allowance: { label: "Allowance / support", tagalog: "Allowance", hint: "allowance received, pinadalhan ako, ayuda, bonus, 13th month" },
   other_income: { label: "Other income", tagalog: "Iba pang kita", hint: "any other money received" },
 };
 
