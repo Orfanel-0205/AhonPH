@@ -1,4 +1,5 @@
 import { normalizeQuickLog, QUICKLOG_SCHEMA, quickLogSystemPrompt } from "@/lib/ai";
+import { refineWithLocalKnowledge } from "@/lib/basicParse";
 import { chat, MODELS } from "@/lib/server/ollama";
 import { badRequest, clientToday, errorResponse, meta, readJson } from "@/lib/server/respond";
 
@@ -24,7 +25,10 @@ export async function POST(req: Request) {
     } catch {
       return Response.json({ error: "The local model gave an unreadable answer. Please try again.", kind: "bad-response" }, { status: 502 });
     }
-    return Response.json({ records: normalizeQuickLog(raw, text, today), meta: await meta(MODELS.text, durationMs) });
+    const records = normalizeQuickLog(raw, text, today);
+    // `raw: true` skips the local-knowledge step so evaluations can report the model on its own.
+    const refined = body?.raw === true ? records : refineWithLocalKnowledge(records, text);
+    return Response.json({ records: refined, meta: await meta(MODELS.text, durationMs) });
   } catch (e) {
     return errorResponse(e);
   }

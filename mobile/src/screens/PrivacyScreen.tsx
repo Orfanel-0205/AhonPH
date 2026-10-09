@@ -3,7 +3,7 @@ import { Alert, ScrollView, Text, View } from "react-native";
 import { Button, Card, H2, Muted, Pill, styles } from "../components";
 import { phoneQuickLog } from "../nanoEngine";
 import { useNano } from "../nanoStore";
-import { buildSampleData, ECON_FACTS, formatDate, FX, QUICKLOG_CASES, scoreQuickLog, todayISO } from "../shared";
+import { buildSampleData, ECON_FACTS, formatDate, FX, QUICKLOG_CASES, QUICKLOG_FINAL, QUICKLOG_HOLDOUT, scoreQuickLog, todayISO, type ParsedRecord, type QuickLogCase } from "../shared";
 import { EMPTY_DATA, useStore } from "../store";
 import { C, S } from "../theme";
 
@@ -16,46 +16,80 @@ function Row({ title, body }: { title: string; body: string }) {
   );
 }
 
-interface TestResult {
-  passed: number;
-  cases: number;
-  correct: number;
-  expected: number;
-  medianMs: number;
-  missed: string[];
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** AICore throttles bursts of requests from one app; the test paces itself and retries, and reports leftovers. */
+async function quickLogWithRetry(text: string): Promise<{ raw: ParsedRecord[]; records: ParsedRecord[]; ms: number } | { error: string }> {
+  let last = "";
+  for (const wait of [0, 5_000, 15_000, 30_000]) {
+    if (wait) await sleep(wait);
+    try {
+      return await phoneQuickLog(text, todayISO());
+    } catch (e) {
+      last = e instanceof Error ? e.message : String(e);
+    }
+  }
+  return { error: last };
 }
 
-/** Runs the same 15 Taglish sentences as scripts/eval-quicklog.mjs, on this phone, and shows the measured result. */
+interface SetResult {
+  name: string;
+  cases: number;
+  aiOnly: number;
+  hybrid: number;
+  records: number;
+  hybridRecords: number;
+}
+
+const TEST_SETS: { name: string; cases: QuickLogCase[] }[] = [
+  { name: "Dev set", cases: QUICKLOG_CASES },
+  { name: "Held-out", cases: QUICKLOG_HOLDOUT },
+  { name: "Final (scored once)", cases: QUICKLOG_FINAL },
+];
+
+/** Runs all three Taglish test sets through Gemini Nano on this phone and scores them exactly. */
 function OnDeviceTest() {
   const nano = useNano();
-  const [result, setResult] = useState<TestResult | null>(null);
+  const [results, setResults] = useState<SetResult[] | null>(null);
+  const [medianMs, setMedianMs] = useState(0);
   const [progress, setProgress] = useState<string | null>(null);
+  const [errors, setErrors] = useState<string[]>([]);
 
   async function run() {
-    setResult(null);
+    setResults(null);
+    const errs: string[] = [];
     const times: number[] = [];
-    let passed = 0;
-    let correct = 0;
-    let expected = 0;
-    const missed: string[] = [];
-    for (const [i, c] of QUICKLOG_CASES.entries()) {
-      setProgress(`Sentence ${i + 1} of ${QUICKLOG_CASES.length}…`);
-      let records: Awaited<ReturnType<typeof phoneQuickLog>>["records"] = [];
-      try {
-        const r = await phoneQuickLog(c.text, todayISO());
-        records = r.records;
-        times.push(r.ms);
-      } catch {
-        // An unreadable answer counts as a miss.
+    const out: SetResult[] = [];
+    const total = TEST_SETS.reduce((n, t) => n + t.cases.length, 0);
+    let done = 0;
+    for (const set of TEST_SETS) {
+      const r: SetResult = { name: set.name, cases: set.cases.length, aiOnly: 0, hybrid: 0, records: 0, hybridRecords: 0 };
+      for (const c of set.cases) {
+        setProgress(`Sentence ${++done} of ${total}…`);
+        let raw: ParsedRecord[] = [];
+        let refined: ParsedRecord[] = [];
+        const res = await quickLogWithRetry(c.text);
+        if ("error" in res) {
+          errs.push(`${c.text}: ${res.error}`);
+        } else {
+          raw = res.raw;
+          refined = res.records;
+          times.push(res.ms);
+        }
+        await sleep(1_500);
+        const a = scoreQuickLog(c, raw);
+        const h = scoreQuickLog(c, refined);
+        if (a.pass) r.aiOnly++;
+        if (h.pass) r.hybrid++;
+        r.records += a.correct;
+        r.hybridRecords += h.correct;
       }
-      const s = scoreQuickLog(c, records);
-      expected += s.expected;
-      correct += s.correct;
-      if (s.pass) passed++;
-      else missed.push(c.text);
+      out.push(r);
     }
-    const sorted = [...times].sort((a, b) => a - b);
-    setResult({ passed, cases: QUICKLOG_CASES.length, correct, expected, medianMs: sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0, missed });
+    const sorted = [...times].sort((x, y) => x - y);
+    setMedianMs(sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0);
+    setResults(out);
+    setErrors(errs);
     setProgress(null);
   }
 
@@ -63,17 +97,26 @@ function OnDeviceTest() {
   return (
     <Card>
       <H2>Test the on-device AI</H2>
-      <Muted style={{ marginBottom: S.sm }}>Runs our 15 Taglish test sentences through Gemini Nano on this phone and scores them exactly.</Muted>
-      <Button label={progress ?? "Run the 15-sentence test"} icon="speedometer" variant="secondary" onPress={run} busy={progress !== null} />
-      {result ? (
-        <View style={{ marginTop: S.md, gap: 4 }}>
-          <Pill
-            label={`${result.passed}/${result.cases} sentences · ${result.correct}/${result.expected} records · median ${(result.medianMs / 1000).toFixed(1)}s`}
-            tone={result.passed === result.cases ? "good" : "info"}
-            icon="speedometer"
-          />
-          <Muted>Measured just now on this phone. Same sentences as the laptop test in the repo.</Muted>
-          {result.missed.length ? <Text style={{ fontSize: 12, color: C.muted }}>Missed: {result.missed.join(" · ")}</Text> : null}
+      <Muted style={{ marginBottom: S.sm }}>
+        Runs 45 Taglish test sentences through Gemini Nano on this phone. &quot;AI only&quot; is the model&apos;s answer; &quot;AI + local&quot; adds KitaPH&apos;s keyword knowledge.
+      </Muted>
+      <Button label={progress ?? "Run the on-device test"} icon="speedometer" variant="secondary" onPress={run} busy={progress !== null} />
+      {results ? (
+        <View style={{ marginTop: S.md }}>
+          <View style={{ flexDirection: "row", paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.border }}>
+            <Text style={{ flex: 1.4, fontSize: 12, color: C.muted, fontWeight: "700" }}>Set</Text>
+            <Text style={{ flex: 1, fontSize: 12, color: C.muted, fontWeight: "700", textAlign: "right" }}>AI only</Text>
+            <Text style={{ flex: 1, fontSize: 12, color: C.muted, fontWeight: "700", textAlign: "right" }}>AI + local</Text>
+          </View>
+          {results.map((r) => (
+            <View key={r.name} style={{ flexDirection: "row", paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.surface2 }}>
+              <Text style={{ flex: 1.4, fontSize: 13, color: C.text }}>{r.name}</Text>
+              <Text style={{ flex: 1, fontSize: 13, color: C.text, textAlign: "right", fontVariant: ["tabular-nums"] }}>{r.aiOnly}/{r.cases}</Text>
+              <Text style={{ flex: 1, fontSize: 13, color: C.text, textAlign: "right", fontWeight: "700", fontVariant: ["tabular-nums"] }}>{r.hybrid}/{r.cases}</Text>
+            </View>
+          ))}
+          <Muted style={{ marginTop: S.sm }}>Sentences fully correct. Median {(medianMs / 1000).toFixed(1)}s per sentence on this phone. Measured just now.</Muted>
+          <Muted>{errors.length ? `${errors.length} sentence(s) still failed after retries (counted as wrong): ${errors.slice(0, 2).join(" · ")}` : "No AI errors during the run."}</Muted>
         </View>
       ) : null}
     </Card>

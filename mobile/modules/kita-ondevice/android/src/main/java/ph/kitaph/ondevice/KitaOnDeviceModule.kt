@@ -25,6 +25,8 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 
+private const val MAX_OUTPUT_TOKENS = 256
+
 private suspend fun <T> Task<T>.awaitResult(): T = suspendCancellableCoroutine { cont ->
   addOnSuccessListener { cont.resume(it) }
   addOnFailureListener { cont.resumeWithException(it) }
@@ -100,7 +102,8 @@ class KitaOnDeviceModule : Module() {
     AsyncFunction("nanoGenerate") Coroutine { requestId: String, prompt: String, temperature: Double, maxOutputTokens: Int ->
       val builder = GenerateContentRequest.Builder(TextPart(prompt))
       builder.temperature = temperature.toFloat()
-      builder.maxOutputTokens = maxOutputTokens
+      // Gemini Nano (Prompt API beta2) accepts 1..256 output tokens.
+      builder.maxOutputTokens = maxOutputTokens.coerceIn(1, MAX_OUTPUT_TOKENS)
       val started = System.currentTimeMillis()
       var firstTokenMs = -1L
       val response = nano.generateContent(builder.build(), StreamingCallback { chunk ->

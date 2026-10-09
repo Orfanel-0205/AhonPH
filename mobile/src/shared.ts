@@ -17,5 +17,5 @@ export { findPricedLines, explainCharges, type ChargeNote, type PricedLine } fro
 export { FX, convertFromPhp, formatForeign, type CurrencyCode } from "../../src/lib/rates";
 export { ECON_FACTS } from "../../src/lib/econ";
 export { ADVISOR_SYSTEM_PROMPT, advisorUserMessage, normalizeQuickLog, quickLogSystemPrompt, type ParsedRecord } from "../../src/lib/ai";
-export { QUICKLOG_CASES, scoreQuickLog } from "../../src/lib/evalQuicklog";
-export { basicQuickLog } from "../../src/lib/basicParse";
+export { QUICKLOG_CASES, QUICKLOG_FINAL, QUICKLOG_HOLDOUT, scoreQuickLog, type QuickLogCase } from "../../src/lib/evalQuicklog";
+export { basicQuickLog, refineWithLocalKnowledge } from "../../src/lib/basicParse";

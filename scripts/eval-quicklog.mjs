@@ -1,11 +1,16 @@
 // Measures quick-log accuracy against the running hub (npm run dev, Ollama running).
-// Usage: node scripts/eval-quicklog.mjs [baseUrl]
+// Usage: node scripts/eval-quicklog.mjs [baseUrl] [dev|holdout|final] [raw]
+// "raw" scores the model alone, without the local-knowledge refinement step.
 // Cases live in src/lib/quicklogCases.json (shared with the in-app on-phone test) and are worded
 // differently from the examples inside the prompt.
 import { readFileSync } from "node:fs";
 
 const BASE = process.argv[2] ?? "http://localhost:3000";
-const CASES = JSON.parse(readFileSync(new URL("../src/lib/quicklogCases.json", import.meta.url), "utf8"));
+const SET = process.argv[3] ?? "dev";
+const RAW = process.argv[4] === "raw";
+const FILE = { dev: "quicklogCases.json", holdout: "quicklogHoldout.json", final: "quicklogFinal.json" }[SET];
+const CASES = JSON.parse(readFileSync(new URL(`../src/lib/${FILE}`, import.meta.url), "utf8"));
+console.log(`Set: ${SET} (${CASES.length} sentences) · ${RAW ? "model only" : "model + local knowledge"}`);
 
 let casesPassed = 0;
 let recordsExpected = 0;
@@ -17,7 +22,7 @@ for (const { text, expected } of CASES) {
   const res = await fetch(`${BASE}/api/ai/quicklog`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, today: "2026-10-09" }),
+    body: JSON.stringify({ text, today: "2026-10-09", raw: RAW }),
   });
   const ms = Date.now() - t0;
   times.push(ms);

@@ -3,6 +3,8 @@
  * in-app on-phone test, so both report the same metric on the same 15 sentences.
  */
 import CASES from "./quicklogCases.json";
+import FINAL from "./quicklogFinal.json";
+import HOLDOUT from "./quicklogHoldout.json";
 import type { CategoryId, TxType } from "./types";
 
 export interface QuickLogCase {
@@ -10,7 +12,14 @@ export interface QuickLogCase {
   expected: { type: TxType; categories: CategoryId[]; pesos: number }[];
 }
 
+/** Development set: seen while building prompts and rules. */
 export const QUICKLOG_CASES = CASES as QuickLogCase[];
+
+/** Held-out set: written at 20:44 on Oct 9, before tuning against on-device results. */
+export const QUICKLOG_HOLDOUT = HOLDOUT as QuickLogCase[];
+
+/** Final set: committed at 20:47 on Oct 9, before the local-knowledge refinement existed; scored once. */
+export const QUICKLOG_FINAL = FINAL as QuickLogCase[];
 
 export function scoreQuickLog(c: QuickLogCase, got: { type: TxType; category: CategoryId; amountCentavos: number }[]) {
   const remaining = [...got];
