@@ -1,0 +1,17 @@
+[
+  { "text": "tricycle pauwi 30, tapos fishball 20", "expected": [ { "type": "expense", "categories": ["transport"], "pesos": 30 }, { "type": "expense", "categories": ["food"], "pesos": 20 } ] },
+  { "text": "nagbayad ako ng Maynilad 610", "expected": [ { "type": "expense", "categories": ["utilities"], "pesos": 610 } ] },
+  { "text": "Netflix 149 tsaka Spotify 79", "expected": [ { "type": "expense", "categories": ["leisure"], "pesos": 149 }, { "type": "expense", "categories": ["leisure"], "pesos": 79 } ] },
+  { "text": "nagpa-check up ako 500 sa clinic", "expected": [ { "type": "expense", "categories": ["health"], "pesos": 500 } ] },
+  { "text": "binayaran ko ang SSS loan 1,000", "expected": [ { "type": "expense", "categories": ["debt"], "pesos": 1000 } ] },
+  { "text": "upa ngayong buwan 4,500", "expected": [ { "type": "expense", "categories": ["rent"], "pesos": 4500 } ] },
+  { "text": "bumili ng uniform ng anak 650", "expected": [ { "type": "expense", "categories": ["education", "personal"], "pesos": 650 } ] },
+  { "text": "Converge wifi 1,499", "expected": [ { "type": "expense", "categories": ["load_internet"], "pesos": 1499 } ] },
+  { "text": "nakatanggap ako ng 13th month 9,000", "expected": [ { "type": "income", "categories": ["allowance", "salary", "other_income"], "pesos": 9000 } ] },
+  { "text": "online selling kita ko 1.2k", "expected": [ { "type": "income", "categories": ["sideline"], "pesos": 1200 } ] },
+  { "text": "padala ko kay lola 1,500", "expected": [ { "type": "expense", "categories": ["family"], "pesos": 1500 } ] },
+  { "text": "grocery sa palengke 640 at bigas 300", "expected": [ { "type": "expense", "categories": ["food"], "pesos": 640 }, { "type": "expense", "categories": ["food"], "pesos": 300 } ] },
+  { "text": "Angkas papunta Ortigas 120", "expected": [ { "type": "expense", "categories": ["transport"], "pesos": 120 } ] },
+  { "text": "gupit 80, shampoo 45", "expected": [ { "type": "expense", "categories": ["personal"], "pesos": 80 }, { "type": "expense", "categories": ["personal"], "pesos": 45 } ] },
+  { "text": "Walang gastos ngayon, nasa bahay lang", "expected": [] }
+]
