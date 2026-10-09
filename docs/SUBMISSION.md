@@ -14,7 +14,12 @@ Copy each field into the Cerebral Valley form. Items in [brackets] still need fi
 
 ## Why does this product benefit from running AI locally?
 
-KitaPH's users are minimum-wage workers whose receipts, salaries, remittances and debts are the most private data they have, and who often have no mobile data to spare. Running the AI on the phone makes the product private by construction (receipts and finances never leave the device; there is no account and no cloud AI), free to use (no per-question inference cost, so it can stay free for the people who need it most), and available offline (it works in airplane mode, in the province, or abroad without roaming). A cloud-only version would need users to upload receipts and salaries, pay for data on every question, and stop working whenever the signal does.
+KitaPH stays fully useful when the cloud disappears: in airplane mode it still reads receipts, breaks down spending, logs Taglish entries, explains receipts, shows personal inflation and translates menus. For our users, a cloud-only version would be:
+
+- **Not private.** Receipts, salaries, remittances and debts are the most sensitive data a minimum-wage worker has. KitaPH never uploads them; there is no account and no cloud AI. The Privacy screen shows what stays on the phone.
+- **Expensive.** Every cloud scan means uploading a 1–3 MB photo over paid mobile data and paying for inference per request. KitaPH shows "0 bytes sent" next to the real photo size on each scan, and costs nothing per use.
+- **Slow or unavailable.** Text recognition takes under a second on the phone and does not wait on a weak signal in the province or abroad without roaming.
+- **Close to impossible.** "Presyo" compares the prices of the exact items you bought a year ago with today's, from a year of item-level receipts. That history is too personal to hand to a server; on the phone it is simply your data.
 
 ## What runs locally
 

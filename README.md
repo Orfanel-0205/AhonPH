@@ -6,11 +6,12 @@ Built for the AppBuildersPH Hackathon 2026 (theme: Local AI). Android app + opti
 
 ## Why local AI
 
-KitaPH's users are minimum-wage workers. Their receipts, salaries, remittances and debts are the most private data they have, and mobile data costs money. Running the AI on the phone makes KitaPH:
+The challenge: an AI product that stays genuinely useful when the cloud disappears. In airplane mode KitaPH still reads receipts, breaks down spending, logs Taglish entries, explains receipts, shows personal inflation, and translates menus. For minimum-wage workers, a cloud-only version would be:
 
-- **Private by construction:** photos and finances never leave the phone. No account, no cloud AI, no analytics.
-- **Free to use:** no per-question inference cost, so it can stay free for the people who need it most.
-- **Offline:** works without load or signal, in the province, or abroad without roaming.
+- **Not private:** receipts, salaries, remittances and debts would leave the phone. KitaPH uploads nothing; no account, no cloud AI, no analytics.
+- **Expensive:** each cloud scan uploads a 1–3 MB photo over paid mobile data and costs inference per request. The app shows "0 bytes sent" next to the real photo size on every scan.
+- **Slow or unavailable:** on-device text recognition takes under a second and does not depend on signal in the province or roaming abroad.
+- **Close to impossible:** "Presyo" (personal inflation) needs a year of item-level receipts — too personal to hand to a server, natural on your own phone.
 
 ## What runs where
 

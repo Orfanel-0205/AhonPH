@@ -16,10 +16,11 @@
 
 **0:00 – 0:40 · The problem.** "Meet Joy. Service crew in Makati, ₱755 a day, the new NCR minimum wage. Last month she spent 98% of what she earned and couldn't say where it went. Prices are up 7.2% this September; rice is up 20.3% (PSA). Budgeting apps want her bank login, a data plan, and her trust. She has none of those to spare."
 
-**0:40 – 1:00 · The promise.** "KitaPH reads her receipts and answers her in Taglish, and all the AI runs on this phone." *Turn on airplane mode now.* Point at the header: **Offline · AI still on**.
+**0:40 – 1:00 · The promise.** "The challenge asks for AI that stays useful when the cloud disappears. So let's make it disappear." *Turn on airplane mode now.* Point at the header: **Offline · AI still on**. "KitaPH reads Joy's receipts and answers her in Taglish — all on this phone."
 
 **1:00 – 2:10 · Scan a receipt (live, airplane mode).** Scan → photo of a real receipt.
 - "Read on this phone in under a second." Point at **Items add up to the TOTAL ✓**: "The AI reads; plain code checks every peso."
+- Point at **0 bytes sent · cloud OCR would need this X MB photo**: "On load she pays for, a cloud app would upload this. KitaPH sends nothing."
 - Show the breakdown and the tips: cheaper store from her own past receipts, price change since last purchase, rice inflation.
 - Save.
 
@@ -31,7 +32,7 @@
 **3:10 – 3:50 · Traveler mode.** Scan → Traveler → photo of a Tagalog menu.
 - Auto-detects Filipino, translates to Korean on the phone, converts prices to won with BSP rates, explains that service charge goes 100% to staff by law (RA 11360).
 
-**3:50 – 4:30 · Why local matters.** Privacy tab.
+**3:50 – 4:30 · Why local matters.** Privacy tab → **If the cloud disappears** card (still offline: every row ✓). Then Home → **Presyo**: "Her personal inflation is 10.7% while the official rate is 7.2% — that needs a year of her receipts, which only makes sense on her own phone."
 - Private: receipts and salaries never leave the phone; no account, no cloud AI.
 - Free: no per-question cloud cost, so it stays free for minimum-wage workers.
 - Offline: works without load or signal — you just watched it.
