@@ -47,6 +47,8 @@ Answer one line per item, numbered like the list, for example:
 export interface MenuReading {
   name: string;
   note: string;
+  /** From the hand-checked dish list, not the AI. */
+  checked?: boolean;
 }
 
 // Includes the long-vowel mark ー and CJK punctuation, which Unicode files under "Common".

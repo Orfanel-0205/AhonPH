@@ -83,3 +83,67 @@ export function parseSplit(text: string, itemCount: number, people: string[]): {
   }
   return { shares, assigned };
 }
+
+const EVERYONE = /\b(lahat|everyone|everybody|all of us|we all|shared by all)\b/i;
+const ME = /\b(akin|ako|me|mine|my)\b/i;
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * A second, rule-based reader of who had what, for common Taglish and English patterns: "kay Maria ang
+ * karaage at beer", "akin ang oyakodon", "hati kaming lahat sa edamame", "Jun had the yakitori".
+ * `aliases[i]` are the words that can name item i (original, English name, romaji). It needs no AI,
+ * and it lets the app check the AI: items both readers agree on are shown as checked.
+ */
+export function ruleSplit(said: string, aliases: string[][], people: string[]): { shares: number[][]; matched: boolean[] } {
+  const sets = aliases.map(() => new Set<number>());
+  const everyone = aliases.map(() => false);
+  const matched = aliases.map(() => false);
+  for (const clause of said.toLowerCase().split(/[,;.!?]|\btapos\b|\bthen\b/)) {
+    const who = new Set<number>();
+    people.forEach((p, k) => {
+      if (k > 0 && new RegExp(String.raw`(^|[^\p{L}])${escapeRe(p.toLowerCase())}($|[^\p{L}])`, "u").test(clause)) who.add(k);
+    });
+    if (ME.test(clause)) who.add(0);
+    const all = EVERYONE.test(clause);
+    if (!who.size && !all) continue;
+    aliases.forEach((words, i) => {
+      if (!words.some((w) => w.trim().length >= 2 && clause.includes(w.trim().toLowerCase()))) return;
+      matched[i] = true;
+      if (all) everyone[i] = true;
+      else who.forEach((k) => sets[i].add(k));
+    });
+  }
+  return { shares: sets.map((s, i) => (everyone[i] ? [] : [...s].sort((a, b) => a - b))), matched };
+}
+
+export type SplitSource = "agree" | "rules" | "ai" | "conflict" | "unmentioned";
+
+/**
+ * Combines the two readers. Where both read an item, agreement is "checked"; disagreement keeps the
+ * rule reading (it only fires on explicit words) and is flagged for the user to look at.
+ */
+export function combineSplit(
+  rule: { shares: number[][]; matched: boolean[] },
+  ai: number[][] | null,
+): { shares: number[][]; source: SplitSource[] } {
+  const same = (a: number[], b: number[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+  const source: SplitSource[] = [];
+  const shares = rule.shares.map((r, i) => {
+    const a = ai?.[i] ?? null;
+    if (rule.matched[i] && a !== null) {
+      source.push(same(r, a) ? "agree" : "conflict");
+      return r;
+    }
+    if (rule.matched[i]) {
+      source.push("rules");
+      return r;
+    }
+    if (a && a.length) {
+      source.push("ai");
+      return a;
+    }
+    source.push("unmentioned");
+    return [];
+  });
+  return { shares, source };
+}

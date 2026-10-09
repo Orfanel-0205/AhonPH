@@ -9,7 +9,7 @@ import { refreshHubAI, useHubAI, useLocalAI } from "../localAI";
 import { useNano } from "../nanoStore";
 import { recognizeText } from "../native";
 import { appNetworkBytes, demoImage, detectLanguage, downloadedLanguages, translateTexts, TRAVELER_LANGUAGES } from "../onDevice";
-import { applyCurrency, convertToPhp, formatCurrency, splitBill, formatPeso, linesToRows, parseForeignReceipt, roundToPeso, sampleTrip, todayISO, tripFacts, tripStatus } from "../shared";
+import { applyCurrency, combineSplit, containsNote, convertToPhp, formatCurrency, lookupDish, ruleSplit, splitBill, formatPeso, linesToRows, parseForeignReceipt, roundToPeso, sampleTrip, todayISO, tripFacts, tripStatus } from "../shared";
 import { listen, offlineSpeechLanguages, speak, THEM_LANGS } from "../speech";
 import { useStore } from "../store";
 import { C, S } from "../theme";
@@ -32,12 +32,12 @@ interface StepView {
 const STEPS: { id: StepId; title: string; engine: string }[] = [
   { id: "ocr", title: "Read a Japanese receipt photo", engine: "ML Kit Text Recognition · Japanese model" },
   { id: "parse", title: "Itemize it and check the math", engine: "LakbayMate code · unit-tested" },
-  { id: "names", title: "Name each item in English", engine: "{AI}" },
+  { id: "names", title: "Name each item in English", engine: "Hand-checked dish list, then {AI}" },
   { id: "lang", title: "Detect the language staff wrote", engine: "ML Kit Language ID" },
   { id: "translate", title: "Understand what staff said", engine: "ML Kit Translation, then {AI}" },
   { id: "say", title: "Answer like a local", engine: "{AI} + code check + back-translation" },
   { id: "log", title: "Understand spending, no receipt", engine: "{AI} + code check" },
-  { id: "split", title: "Split the bill from one sentence", engine: "{AI} assigns · code computes" },
+  { id: "split", title: "Split the bill from one sentence", engine: "Rules + {AI} read it, checked against each other · code computes" },
   { id: "tip", title: "Budget tip with checked numbers", engine: "{AI} + code check" },
   { id: "voice", title: "Say the answer out loud", engine: "Android text-to-speech · offline voice" },
 ];
@@ -144,12 +144,29 @@ export function OfflineAIDemo() {
 
     if (
       await step("names", async (update) => {
-        if (!hasNano) return noNano;
         if (!itemNames.length) throw new Error("No items to name.");
-        const show = (m: Map<number, { name: string; note: string }>) => itemNames.flatMap((n, i) => (m.get(i) ? [`${n} → ${m.get(i)!.name}`] : []));
-        const r = await phoneReadMenu(itemNames, "ja", (m) => update(show(m)));
-        english = r.readings;
-        return { lines: show(r.readings), note: `${r.readings.size} of ${itemNames.length} named; hedged or echoed answers are dropped by code.` };
+        // Known dishes come from the hand-checked list (facts, instant); the AI names only the rest.
+        const known = new Map<number, { name: string; note: string; checked?: boolean }>();
+        itemNames.forEach((n, i) => {
+          const d = lookupDish(n);
+          if (d) known.set(i, { name: d.en, note: containsNote(d), checked: true });
+        });
+        const unknown = itemNames.map((_, i) => i).filter((i) => !known.has(i));
+        const show = (m: Map<number, { name: string; note: string; checked?: boolean }>) =>
+          itemNames.flatMap((n, i) => (m.get(i) ? [`${m.get(i)!.checked ? "✓" : "✨"} ${n} → ${m.get(i)!.name}${m.get(i)!.checked && m.get(i)!.note ? ` (${m.get(i)!.note.replace(/^Contains: /, "").replace(/\.$/, "")})` : ""}`] : []));
+        english = new Map(known);
+        if (unknown.length && hasNano) {
+          const r = await phoneReadMenu(unknown.map((i) => itemNames[i]), "ja", (m) => {
+            const all = new Map(known);
+            m.forEach((v, j) => all.set(unknown[j], v));
+            update(show(all));
+          });
+          r.readings.forEach((v, j) => english.set(unknown[j], v));
+        }
+        return {
+          lines: show(english),
+          note: `✓ ${known.size} from the hand-checked list (what they contain is a fact) · ✨ ${english.size - known.size} named by ${aiName}.`,
+        };
       })
     )
       ok++;
@@ -215,21 +232,29 @@ export function OfflineAIDemo() {
     await sleep(600);
     if (
       await step("split", async () => {
-        if (!hasNano) return noNano;
         if (!itemNames.length) throw new Error("No receipt items to split.");
         const people = ["Ako", "Maria", "Jun"];
-        const said = "Kay Maria ang karaage, kay Jun ang yakitori, hati kaming lahat sa beer at edamame, akin ang oyakodon.";
+        // The harder sentence: one beer each for two people. Rules and AI read it independently.
+        const said = "Kay Maria ang karaage at isang beer, kay Jun ang yakitori at isang beer, hati kaming lahat sa edamame, akin ang oyakodon.";
         const labels = itemNames.map((n, i) => (english.get(i) ? `${n} (${english.get(i)!.name})` : n));
-        const r = await phoneSplit(labels, people, said);
+        const aliases = itemNames.map((n, i) => {
+          const d = lookupDish(n);
+          return [n, ...(english.get(i) ? [english.get(i)!.name] : []), ...(d ? [d.en, ...d.say] : [])];
+        });
+        const rule = ruleSplit(said, aliases, people);
+        const aiShares = hasNano ? (await phoneSplit(labels, people, said)).shares : null;
+        const combined = combineSplit(rule, aiShares);
+        const r = { shares: combined.shares };
+        const mark = { agree: "✓", rules: "rules", ai: "AI", conflict: "⚠ AI differed, rules kept", unmentioned: "" } as const;
         const split = splitBill(itemTotals, r.shares, people.length, receiptTotal, 0);
         return {
           lines: [
             `“${said}”`,
             // Who got what, so anyone watching can check the AI's assignment, then what each person pays.
-            ...itemNames.map((n, i) => `${english.get(i)?.name ?? n} → ${r.shares[i]?.length ? r.shares[i].map((k) => people[k]).join(", ") : "everyone"}`),
+            ...itemNames.map((n, i) => `${english.get(i)?.name ?? n} → ${r.shares[i]?.length ? r.shares[i].map((k) => people[k]).join(", ") : "everyone"} ${mark[combined.source[i]]}`.trim()),
             ...people.map((p, i) => `${p} pays ${formatCurrency(split.amounts[i], "JPY")} ≈ ${formatPeso(roundToPeso(convertToPhp(split.amounts[i], "JPY")))}`),
           ],
-          note: `${r.assigned} of ${itemNames.length} items assigned; only names on the list are accepted. ✓ Shares add up to ${formatCurrency(receiptTotal, "JPY")} exactly, computed by code.`,
+          note: `${aiShares ? `✓ Rules and ${aiName} agree on ${combined.source.filter((x) => x === "agree").length} of ${itemNames.length}` : "Read by the rules (no AI model here)"}${combined.source.includes("conflict") ? `; ⚠ ${combined.source.filter((x) => x === "conflict").length} disagreement flagged` : ""}. Only names on the list count. Shares add up to ${formatCurrency(receiptTotal, "JPY")} exactly, computed by code.`,
         };
       })
     )

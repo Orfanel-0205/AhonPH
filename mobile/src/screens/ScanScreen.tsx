@@ -11,6 +11,8 @@ import { expectedScript, recognizeAnyScript, recognizeText, SCRIPT_LABEL, type O
 import { detectLanguage, downloadedLanguages, prepareTranslation, translateTexts, TRAVELER_LANGUAGES } from "../onDevice";
 import {
   breakdownReceipt,
+  containsNote,
+  lookupDish,
   checkReceipt,
   checkReceiptWithSubtotal,
   convertFromPhp,
@@ -406,7 +408,29 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
     setMenuBusy(true);
     try {
       const started = Date.now();
-      const r = await phoneReadMenu(menuLines, source, (readings) => setMenu({ readings, ms: Date.now() - started }));
+      // Hand-checked dishes first (instant, and their "contains" is a fact); the AI only names the rest.
+      const known = new Map<number, MenuReading>();
+      menuLines.forEach((l, i) => {
+        const d = lookupDish(l);
+        if (d) known.set(i, { name: d.en, note: [d.note, containsNote(d)].filter(Boolean).join(" "), checked: true });
+      });
+      const unknown = menuLines.map((_, i) => i).filter((i) => !known.has(i));
+      const r = { readings: new Map(known), ms: 0 };
+      setMenu({ readings: new Map(known), ms: 0 });
+      if (unknown.length && ai.available) {
+        const merge = (m: Map<number, MenuReading>) => {
+          const all = new Map(known);
+          m.forEach((v, j) => all.set(unknown[j], v));
+          return all;
+        };
+        const got = await phoneReadMenu(
+          unknown.map((i) => menuLines[i]),
+          source,
+          (partial) => setMenu({ readings: merge(partial), ms: Date.now() - started }),
+        );
+        r.readings = merge(got.readings);
+      }
+      r.ms = Date.now() - started;
       if (settings.meLang === "tl" && r.readings.size) {
         const keys = [...r.readings.keys()].filter((k) => r.readings.get(k)!.note);
         const t = keys.length ? await translateTexts(keys.map((k) => r.readings.get(k)!.note), "en", "tl") : { texts: [] };
@@ -422,7 +446,7 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
 
   // Japanese, Korean and Chinese menus: Gemini Nano reads them right away (the offline translator mangles dish names).
   useEffect(() => {
-    if (source && isNanoLang(source) && ai.available && !menu && !menuBusy && menuLines.length) readMenu();
+    if (source && isNanoLang(source) && !menu && !menuBusy && menuLines.length) readMenu();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, ai.available]);
 
@@ -495,7 +519,7 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
     : menuBusy
       ? `✨ ${ai.name} is reading ${ai.where}… ${menu?.readings.size ?? 0} of ${menuLines.length}`
       : menu
-        ? `✨ Names by ${ai.name} · ${menu.readings.size} of ${menuLines.length} in ${(menu.ms / 1000).toFixed(1)}s ${ai.where}`
+        ? `✓ ${[...menu.readings.values()].filter((r) => r.checked).length} hand-checked · ✨ ${[...menu.readings.values()].filter((r) => !r.checked).length} by ${ai.name} · ${(menu.ms / 1000).toFixed(1)}s ${ai.where}`
         : null;
   const local = (amount: number) => (fromCurrency ? formatCurrency(amount, fromCurrency) : formatPeso(Math.round(amount * 100)));
   const inPesos = (amount: number) => (fromCurrency ? `≈${formatPeso(roundToPeso(convertToPhp(amount, fromCurrency)))}` : "");
@@ -541,7 +565,10 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
   const itemRow = (key: string, i: number, original: string, right: ReactNode) => (
     <View key={key} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.surface2, gap: S.sm }}>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 15, color: C.text, fontWeight: "700" }}>{nameAt(i)}</Text>
+        <Text style={{ fontSize: 15, color: C.text, fontWeight: "700" }}>
+          {menu?.readings.get(i)?.checked ? <Text style={{ color: C.good }}>✓ </Text> : null}
+          {nameAt(i)}
+        </Text>
         {noteAt(i) ? <Text style={{ fontSize: 13, color: C.text, marginTop: 2 }}>{noteAt(i)}</Text> : null}
         {nameAt(i) !== original ? <Muted>{original}</Muted> : null}
       </View>
@@ -621,7 +648,10 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
           <SplitModal
             open={splitOpen}
             onClose={() => setSplitOpen(false)}
-            items={abroad.items.map((it, i) => ({ name: nameAt(i), original: it.name, total: it.total }))}
+            items={abroad.items.map((it, i) => {
+              const d = lookupDish(it.name);
+              return { name: nameAt(i), original: it.name, total: it.total, aliases: [it.name, nameAt(i), ...(d ? [d.en, ...d.say] : [])] };
+            })}
             total={abroad.total ?? abroad.subtotal ?? abroad.check.itemsSum}
             currency={fromCurrency}
             store={abroad.store}

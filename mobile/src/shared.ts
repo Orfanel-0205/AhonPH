@@ -44,5 +44,6 @@ export {
 } from "../../src/lib/talk";
 export { applyCurrency, type ForeignRecord } from "../../src/lib/tripMoney";
 export { convertToPhp, detectCurrency, formatCurrency } from "../../src/lib/rates";
-export { parseSplit, splitBill, splitPrompt } from "../../src/lib/split";
+export { combineSplit, parseSplit, ruleSplit, splitBill, splitPrompt, type SplitSource } from "../../src/lib/split";
+export { containsNote, lookupDish, type Dish } from "../../src/lib/dishes";
 export { acceptTripTips, formatPeso as formatTripPeso, inBoth, sampleTrip, tripFacts, tripStatus, tripTipPrompt, tripTips, type TripPlan, type TripStatus } from "../../src/lib/tripBudget";

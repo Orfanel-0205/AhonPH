@@ -94,7 +94,18 @@ export async function generate(
   opts: { temperature: number; maxOutputTokens: number; onText?: (soFar: string) => void },
 ): Promise<{ text: string; ms: number; firstTokenMs: number }> {
   const kind = pick(nanoReadyNow);
-  if (kind === "nano" || (kind === null && OnDevice)) return nanoGenerate(prompt, opts);
+  if (kind === "nano" || (kind === null && OnDevice)) {
+    // A stuck model must never freeze the app: after 30 s the caller falls back (ML Kit, phrasebook, rules).
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error("The phone's AI took too long; using the offline fallback.")), 30_000);
+    });
+    try {
+      return await Promise.race([nanoGenerate(prompt, opts), timeout]);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
   const started = Date.now();
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 90_000);

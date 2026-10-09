@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseSplit, splitBill, splitPrompt } from "./split";
+import { combineSplit, parseSplit, ruleSplit, splitBill, splitPrompt } from "./split";
 
 // The AI Lab's sample receipt: beer x2 1,200, edamame 400, yakitori 1,200, karaage 700, oyakodon 950; tax 445; total 4,895.
 const ITEMS = [1200, 400, 1200, 700, 950];
@@ -49,5 +49,43 @@ describe("hatian (bill split)", () => {
 
   it("tells the model who is speaking", () => {
     expect(splitPrompt(["Beer"], ["Ako", "Maria"], "kay Maria ang beer")).toContain('"Ako" is the person speaking');
+  });
+
+  const ALIASES = [
+    ["生ビール", "Draft beer", "beer"],
+    ["枝豆", "Edamame", "edamame", "soybeans"],
+    ["焼き鳥盛り合わせ", "Assorted yakitori", "yakitori"],
+    ["唐揚げ", "Karaage", "karaage", "fried chicken"],
+    ["親子丼", "Oyakodon", "oyakodon", "chicken and egg"],
+  ];
+  const PEOPLE = ["Ako", "Maria", "Jun"];
+
+  it("rules read the harder sentence: one beer each for two people", () => {
+    const r = ruleSplit("Kay Maria ang karaage at isang beer, kay Jun ang yakitori at isang beer, hati kaming lahat sa edamame, akin ang oyakodon.", ALIASES, PEOPLE);
+    expect(r.shares).toEqual([[1, 2], [], [2], [1], [0]]);
+    expect(r.matched).toEqual([true, true, true, true, true]);
+  });
+
+  it("rules read English too", () => {
+    const r = ruleSplit("Maria had the fried chicken, Jun had the yakitori, we all shared the beer and edamame, the oyakodon is mine", ALIASES, PEOPLE);
+    expect(r.shares).toEqual([[], [], [2], [1], [0]]);
+  });
+
+  it("rules leave an unmentioned item to the AI or to everyone", () => {
+    const r = ruleSplit("akin ang oyakodon", ALIASES, PEOPLE);
+    expect(r.matched).toEqual([false, false, false, false, true]);
+  });
+
+  it("checks the AI against the rules and flags disagreement", () => {
+    const rule = ruleSplit("Kay Maria ang karaage at isang beer, kay Jun ang yakitori at isang beer, hati kaming lahat sa edamame, akin ang oyakodon.", ALIASES, PEOPLE);
+    // Gemini Nano's real answer on this sentence gave the beer to Maria only.
+    const c = combineSplit(rule, [[1], [], [2], [1], [0]]);
+    expect(c.source).toEqual(["conflict", "agree", "agree", "agree", "agree"]);
+    expect(c.shares[0]).toEqual([1, 2]);
+  });
+
+  it("uses the AI where the rules found nothing", () => {
+    const c = combineSplit(ruleSplit("akin ang oyakodon", ALIASES, PEOPLE), [[1], [], [], [], [0]]);
+    expect(c.source).toEqual(["ai", "unmentioned", "unmentioned", "unmentioned", "agree"]);
   });
 });

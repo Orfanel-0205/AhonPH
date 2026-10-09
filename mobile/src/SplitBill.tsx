@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Card, Chip, H2, Muted, Pill, styles } from "./components";
 import { useLocalAI } from "./localAI";
 import { phoneSplit } from "./nanoEngine";
-import { convertToPhp, formatCurrency, formatPeso, roundToPeso, splitBill, todayISO, type CurrencyCode } from "./shared";
+import { combineSplit, convertToPhp, formatCurrency, formatPeso, roundToPeso, ruleSplit, splitBill, todayISO, type CurrencyCode, type SplitSource } from "./shared";
 import { listen } from "./speech";
 import { newId, useStore } from "./store";
 import { C, S } from "./theme";
@@ -15,7 +15,17 @@ export interface SplitItem {
   name: string;
   original: string;
   total: number;
+  /** Words that can name this item in what people say (original, English, romaji). */
+  aliases: string[];
 }
+
+const SOURCE_LABEL: Record<SplitSource, string> = {
+  agree: "✓ AI and rules agree",
+  rules: "from the rules",
+  ai: "from the AI",
+  conflict: "⚠ AI and rules disagree; check",
+  unmentioned: "not mentioned: everyone",
+};
 
 const WHOLE: CurrencyCode[] = ["JPY", "KRW", "TWD", "VND", "IDR"];
 
@@ -47,6 +57,7 @@ export function SplitModal({
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [sources, setSources] = useState<SplitSource[] | null>(null);
   const [saved, setSaved] = useState(false);
 
   const decimals = WHOLE.includes(currency) ? 0 : 2;
@@ -61,6 +72,7 @@ export function SplitModal({
   }
 
   function toggle(i: number, p: number) {
+    setSources((prev) => prev && prev.map((x, k) => (k === i ? "rules" : x)));
     setShares((prev) => {
       const cur = prev[i] ?? [];
       const nextForItem = cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p].sort((a, b) => a - b);
@@ -68,25 +80,41 @@ export function SplitModal({
     });
   }
 
+  /**
+   * Two independent readers: rules for common Taglish/English patterns, and the local AI. Where both read
+   * an item the result is checked; where they disagree the rule reading is kept and the item is flagged.
+   */
   async function assignWithAI() {
     if (!said.trim() || busy) return;
     setBusy(true);
     setNote(null);
-    try {
-      const r = await phoneSplit(
-        items.map((i) => (i.name !== i.original ? `${i.original} (${i.name})` : i.name)),
-        people,
-        said.trim(),
-      );
-      setShares(r.shares);
-      setNote(
-        `✨ ${ai.name} assigned ${r.assigned} of ${items.length} items in ${(r.ms / 1000).toFixed(1)}s. Only names on your list are accepted; anything not mentioned is shared by everyone. Tap to fix.`,
-      );
-    } catch (e) {
-      setNote(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
+    const started = Date.now();
+    const rule = ruleSplit(said.trim(), items.map((i) => i.aliases), people);
+    let aiShares: number[][] | null = null;
+    let aiError: string | null = null;
+    if (ai.available) {
+      try {
+        aiShares = (await phoneSplit(items.map((i) => (i.name !== i.original ? `${i.original} (${i.name})` : i.name)), people, said.trim())).shares;
+      } catch (e) {
+        aiError = e instanceof Error ? e.message : String(e);
+      }
     }
+    const c = combineSplit(rule, aiShares);
+    setShares(c.shares);
+    setSources(c.source);
+    const n = (k: SplitSource) => c.source.filter((x) => x === k).length;
+    setNote(
+      [
+        `Read in ${((Date.now() - started) / 1000).toFixed(1)}s${aiShares ? ` by the rules and ${ai.name}` : " by the rules"}.`,
+        n("agree") ? `✓ ${n("agree")} checked by both.` : "",
+        n("conflict") ? `⚠ ${n("conflict")} to check (they disagree).` : "",
+        aiError ? `AI skipped: ${aiError}` : "",
+        "Only names on your list count; tap to fix anything.",
+      ]
+        .filter(Boolean)
+        .join(" "),
+    );
+    setBusy(false);
   }
 
   async function speakIt() {
@@ -161,7 +189,7 @@ export function SplitModal({
             </View>
           </Card>
 
-          {ai.available && people.length > 1 ? (
+          {people.length > 1 ? (
             <Card>
               <H2>✨ Sabihin kung sino ang kumain ng ano</H2>
               <TextInput
@@ -174,7 +202,7 @@ export function SplitModal({
               />
               <View style={{ flexDirection: "row", gap: S.sm, marginTop: S.sm }}>
                 <View style={{ flex: 1 }}>
-                  <Button label={`Assign with ${ai.name}`} icon="sparkles" onPress={assignWithAI} busy={busy} disabled={!said.trim()} />
+                  <Button label={ai.available ? `Assign · rules + ${ai.name}` : "Assign · rules"} icon="sparkles" onPress={assignWithAI} busy={busy} disabled={!said.trim()} />
                 </View>
                 <View style={{ width: 64 }}>
                   <Button label="" icon={listening ? "stop" : "mic"} variant="secondary" onPress={speakIt} />
@@ -193,6 +221,9 @@ export function SplitModal({
                   <Text style={{ fontSize: 15, fontWeight: "700", color: C.text }}>{local(it.total)}</Text>
                 </View>
                 {it.name !== it.original ? <Muted>{it.original}</Muted> : null}
+                {sources?.[i] ? (
+                  <Text style={{ fontSize: 12, marginTop: 2, color: sources[i] === "conflict" ? C.warn : sources[i] === "agree" ? C.good : C.muted }}>{SOURCE_LABEL[sources[i]]}</Text>
+                ) : null}
                 <View style={[styles.wrap, { marginTop: 6 }]}>
                   <Chip label="Lahat" selected={!(shares[i] ?? []).length} onPress={() => setShares((prev) => prev.map((s, k) => (k === i ? [] : s)))} />
                   {people.map((p, k) => (
