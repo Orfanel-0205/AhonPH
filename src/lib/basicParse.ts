@@ -31,7 +31,7 @@ function pickCategory(segment: string, income: boolean): CategoryId {
   return income ? "other_income" : "other";
 }
 
-function splitSegments(text: string): string[] {
+export function splitSegments(text: string): string[] {
   return (
     text
       // Commas separate items, except inside amounts like "3,000".

@@ -46,6 +46,18 @@
           "imageWidth": 180,
           "backgroundColor": "#0f7a5c"
         }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "KitaPH listens only while you hold the mic, and speech is turned into text on your phone.",
+          "speechRecognitionPermission": "KitaPH turns speech into text on your phone.",
+          "androidSpeechServicePackages": [
+            "com.google.android.as",
+            "com.google.android.tts",
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
       ]
     ],
     "description": "Private money assistant for Filipino workers: on-device receipt reading, Taglish AI and traveler translation that work offline."
