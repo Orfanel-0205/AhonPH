@@ -21,15 +21,17 @@ export interface ForeignReceipt {
   payment: string | null;
   /** Items must add up to the subtotal (or the total when there is no subtotal). */
   check: { status: "ok" | "mismatch" | "unknown"; itemsSum: number; against: "subtotal" | "total" | null; printed: number | null };
+  /** Set when the total was corrected: what the camera read (e.g. 44,895 for ¥4,895). */
+  totalRead?: number;
 }
 
 const TOTAL = /(合\s*計|総合計|お会計|ご請求|합\s*계|총\s*액|결제\s*금액|合计|总计|總計|應付|应付|\bTOTAL\b)/i;
 const SUBTOTAL = /(小\s*計|商品計|小计|소\s*계|\bSUB\s*-?\s*TOTAL\b)/i;
 const TAX = /(税額|消費税|内税|外税|부가세|세액|税额|增值税|\bTAX\b)/i;
 const PAYMENT = /\b(VISA|MASTER(?:CARD)?|JCB|AMEX|DINERS|UNIONPAY|PAYPAY|SUICA|PASMO|ALIPAY|WECHAT)\b|現金|クレジット|신용|카드|现金|現金|微信|支付宝/i;
-/** Rows that hold numbers but are not items: dates, phone, slip and table numbers, change, tax bases. */
+/** Rows that hold numbers but are not items: dates, phone, addresses (1-2-3), slip and table numbers, change, tax bases. */
 const SKIP =
-  /(Tel|TEL|電話|No\.|伝票|担当|テーブル|卓|名様|人数|領収|レシート|年.*月.*日|\d{1,2}:\d{2}|お預|預り|お釣|釣銭|現計|信計|対象|ポイント|받은|거스름|테이블|번호|영수증|实收|找零|桌|发票|收据|点数|\bCHANGE\b|\bCASH\b)/i;
+  /(\d+[-－‐]\d+|Tel|TEL|電話|No\.|伝票|担当|テーブル|卓|名様|人数|領収|レシート|年.*月.*日|\d{1,2}:\d{2}|お預|預り|お釣|釣銭|現計|信計|対象|ポイント|받은|거스름|테이블|번호|영수증|实收|找零|桌|发票|收据|点数|\bCHANGE\b|\bCASH\b)/i;
 const HEADER = /^(商品名|品名|単価|数量|金額|상품명|단가|수량|금액|品名|单价|数量|金额|\s)+$/;
 /** Tax-type marks printed after an amount: (外10店), (内8持), ※. */
 const TAX_MARK = /[(（](?:外|内|税)[^)）]*[)）]|※|\*/g;
@@ -39,7 +41,9 @@ const AMOUNT = /[¥￥₩$]?\s?(\d{1,3}(?:[,，]\d{3})+(?:\.\d{1,2})?|\d{1,3}\.\
 
 function amounts(row: string, wholeNumbers: boolean): number[] {
   const out: number[] = [];
-  for (const m of row.matchAll(AMOUNT)) {
+  // Monospace receipt fonts often read as "¥4, 450": rejoin a thousands group split after the comma.
+  const joined = row.replace(/(\d)[,，]\s+(\d{3})(?!\d)/g, "$1,$2");
+  for (const m of joined.matchAll(AMOUNT)) {
     let t = m[1].replace(/[,，]/g, "");
     if (wholeNumbers && /^\d{1,3}\.\d{3}$/.test(m[1])) t = m[1].replace(".", "");
     const v = Number(t);
@@ -130,8 +134,11 @@ export function parseForeignReceipt(rows: string[], opts: { wholeNumbers?: boole
       pendingName = null;
     } else if (letters(label) >= 2) {
       if (!store && !items.length) store = label;
-      else pendingName = label;
+      // Kept as a possible item name too: with no store line, the first row is the first item.
+      pendingName = label;
     } else if (nums.length && pendingName) {
+      // Prices right after the "store" line mean it was an item, not the store.
+      if (pendingName === store && !items.length) store = null;
       // Numbers on the row after the name: "¥2,500  3  ¥7,500".
       const n = itemNumbers(nums);
       if (n && n.total > 0) items.push({ name: pendingName, ...n });
@@ -144,5 +151,30 @@ export function parseForeignReceipt(rows: string[], opts: { wholeNumbers?: boole
   const against = subtotal !== null ? "subtotal" : total !== null ? "total" : null;
   const printed = against === "subtotal" ? subtotal : total;
   const status = !items.length || printed === null ? "unknown" : Math.abs(itemsSum - printed) < 0.01 ? "ok" : "mismatch";
-  return { store, items, subtotal, total, tax, payment, check: { status, itemsSum, against, printed } };
+  const repaired = repairTotal(total, subtotal, tax);
+  return {
+    store,
+    items,
+    subtotal,
+    total: repaired ? repaired.total : total,
+    tax,
+    payment,
+    check: { status, itemsSum, against, printed },
+    ...(repaired && total !== null ? { totalRead: total } : {}),
+  };
+}
+
+/**
+ * The yen sign is often read as "4", "Y" or "\" ("¥4,895" → "44,895"). When dropping the first digit
+ * makes the total equal subtotal + tax (or the tax-inclusive subtotal), that is what was printed.
+ */
+function repairTotal(total: number | null, subtotal: number | null, tax: number | null): { total: number } | null {
+  if (total === null || subtotal === null) return null;
+  const expected = [tax !== null ? subtotal + tax : null, subtotal].filter((v): v is number => v !== null);
+  if (expected.some((e) => Math.abs(total - e) < 0.01)) return null;
+  const digits = String(total);
+  if (digits.length < 2) return null;
+  const dropped = Number(digits.slice(1));
+  const match = expected.find((e) => Math.abs(dropped - e) < 0.01);
+  return match !== undefined ? { total: match } : null;
 }

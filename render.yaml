@@ -1,4 +1,4 @@
-# Render Blueprint for the optional KitaPH Cloud service (FastAPI).
+# Render Blueprint for the optional LakbayMate Cloud service (FastAPI).
 services:
   - type: web
     name: kitaph-cloud

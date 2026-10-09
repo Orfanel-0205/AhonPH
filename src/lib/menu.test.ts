@@ -26,6 +26,10 @@ describe("menu reading", () => {
     expect(r.has(8)).toBe(false);
   });
 
+  it("strips a copied format word", () => {
+    expect(parseMenuReading("1. number. Draft Beer", 1).get(0)?.name).toBe("Draft Beer");
+  });
+
   it("drops hedged guesses and a repeated original in the note", () => {
     const r = parseMenuReading(["1. Karyo- | Not sure. This might be a typo", "2. Saba no Miso-ni | 鯖の味噌煮 - mackerel simmered in miso"].join("\n"), 2);
     expect(r.has(0)).toBe(false);

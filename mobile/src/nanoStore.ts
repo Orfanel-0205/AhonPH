@@ -1,4 +1,4 @@
-/** App-wide status of Gemini Nano, shared by the setup screen, Kita AI, and Privacy. */
+/** App-wide status of Gemini Nano, shared by the setup screen, LakbayMate AI, and Privacy. */
 import { useSyncExternalStore } from "react";
 import { OnDevice, type NanoInfo, type NanoStatus } from "./onDevice";
 

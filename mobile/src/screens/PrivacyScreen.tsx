@@ -7,6 +7,7 @@ import { useNano } from "../nanoStore";
 import { downloadedLanguages, TRAVELER_LANGUAGES } from "../onDevice";
 import { buildSampleData, ECON_FACTS, formatDate, formatPeso, FX, QUICKLOG_CASES, QUICKLOG_FINAL, QUICKLOG_HOLDOUT, scoreQuickLog, todayISO, type ParsedRecord, type QuickLogCase } from "../shared";
 import { EMPTY_DATA, useStore } from "../store";
+import { OfflineAIDemo, OnPhoneModels } from "./AILab";
 import { C, S } from "../theme";
 
 function Row({ title, body }: { title: string; body: string }) {
@@ -100,7 +101,7 @@ function OnDeviceTest() {
     <Card>
       <H2>Test the on-device AI</H2>
       <Muted style={{ marginBottom: S.sm }}>
-        Runs 45 Taglish test sentences through Gemini Nano on this phone. &quot;AI only&quot; is the model&apos;s answer; &quot;AI + local&quot; adds KitaPH&apos;s keyword knowledge.
+        Runs 45 Taglish test sentences through Gemini Nano on this phone. &quot;AI only&quot; is the model&apos;s answer; &quot;AI + local&quot; adds LakbayMate&apos;s keyword knowledge.
       </Muted>
       <Button label={progress ?? "Run the on-device test"} icon="speedometer" variant="secondary" onPress={run} busy={progress !== null} />
       {results ? (
@@ -152,10 +153,10 @@ function CloudGoneCard() {
   return (
     <Card style={{ borderColor: offline ? C.good : C.border, borderWidth: offline ? 2 : 1 }}>
       <H2>If the cloud disappears</H2>
-      <Pill label={offline ? "Right now: offline — and still working" : "Right now: online (KitaPH doesn't need it)"} tone={offline ? "good" : "info"} icon={offline ? "airplane" : "wifi"} />
+      <Pill label={offline ? "Right now: offline — and still working" : "Right now: online (LakbayMate doesn't need it)"} tone={offline ? "good" : "info"} icon={offline ? "airplane" : "wifi"} />
       <View style={{ marginTop: S.sm }}>
-        <Check ok label="Scan receipts, breakdown, tips, Presyo" note="ML Kit text recognition + KitaPH code, on this phone" />
-        <Check ok={nano.status === "available"} label="Taglish logging and Kita AI" note={nano.status === "available" ? "Gemini Nano, built into Android, on this phone" : "Needs the one-time Gemini Nano setup (or basic mode)"} />
+        <Check ok label="Scan receipts, breakdown, tips, Presyo" note="ML Kit text recognition + LakbayMate code, on this phone" />
+        <Check ok={nano.status === "available"} label="Taglish logging and LakbayMate AI" note={nano.status === "available" ? "Gemini Nano, built into Android, on this phone" : "Needs the one-time Gemini Nano setup (or basic mode)"} />
         <Check ok={langNames.length > 0} label="Traveler translation" note={langNames.length ? `Offline packs: Filipino, English, ${langNames.join(", ")}` : "English only until a language pack is downloaded"} />
       </View>
       <Muted style={{ marginTop: S.sm }}>
@@ -170,24 +171,28 @@ export function PrivacyScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
   const nano = useNano();
   const nanoText =
     nano.status === "available"
-      ? `Ready${nano.info?.baseModel ? ` (${nano.info.baseModel})` : ""}. Android's built-in model; KitaPH bundles none.`
+      ? `Ready${nano.info?.baseModel ? ` (${nano.info.baseModel})` : ""}. Android's built-in model; LakbayMate bundles none.`
       : nano.status === "downloadable" || nano.status === "downloading"
         ? "Supported on this phone. Finish the one-time download in setup."
-        : "Not available on this phone. Kita AI uses your laptop hub or basic mode.";
+        : "Not available on this phone. LakbayMate AI uses your laptop hub or basic mode.";
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
-      <Text style={styles.title}>Privacy</Text>
-      <Muted style={{ marginBottom: S.md }}>Your receipts and finances stay on this phone. Here is exactly what runs where.</Muted>
+      <Text style={styles.title}>AI Lab</Text>
+      <Muted style={{ marginBottom: S.md }}>
+        Every AI model in LakbayMate runs on this phone. Turn on airplane mode and run the demo: nothing needs the internet, and your data never leaves the phone.
+      </Muted>
 
+      <OfflineAIDemo />
+      <OnPhoneModels onOpenSetup={onOpenSetup} />
       <CloudGoneCard />
 
       <Card>
-        <H2>On this phone (works offline)</H2>
+        <H2>Privacy · what runs where</H2>
         <Row title="Receipt reader" body="Google ML Kit text recognition, bundled in the app. Photos are never uploaded." />
-        <Row title="Kita AI · Gemini Nano" body={nanoText} />
+        <Row title="LakbayMate AI · Gemini Nano" body={nanoText} />
         <Row title="Traveler translation" body="Google ML Kit on-device translation and language detection. Language packs download once, then work offline." />
-        <Row title="Receipt checks, budgets, tips" body="KitaPH code: every peso is computed, never guessed by AI." />
+        <Row title="Receipt checks, budgets, tips" body="LakbayMate code: every peso is computed, never guessed by AI." />
         <Row title="Economic data" body={`Bundled PSA inflation (${ECON_FACTS.headlineInflation.period}) and DOLE wage figures; ${FX.source} for currencies.`} />
         <View style={{ marginTop: S.md }}>
           <Button label="Offline AI setup" icon="construct" variant="secondary" onPress={onOpenSetup} />
@@ -201,7 +206,7 @@ export function PrivacyScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
 
       <Card>
         <H2>Never</H2>
-        <Row title="No cloud AI, no account, no tracking" body="KitaPH sends your finances nowhere. There is no login and no analytics." />
+        <Row title="No cloud AI, no account, no tracking" body="LakbayMate sends your finances nowhere. There is no login and no analytics." />
       </Card>
 
       <OnDeviceTest />

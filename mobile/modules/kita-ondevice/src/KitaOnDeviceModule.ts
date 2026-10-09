@@ -31,6 +31,8 @@ declare class KitaOnDeviceModule extends NativeModule<Events> {
   translateBatch(texts: string[], source: string, target: string): Promise<{ texts: string[]; ms: number }>;
   identifyLanguage(text: string): Promise<string>;
   takeSharedText(): string | null;
+  appNetworkBytes(): { sent: number; received: number };
+  demoImage(name: string): Promise<string>;
 }
 
 /** Null when the native module is missing (e.g. running in Expo Go). */

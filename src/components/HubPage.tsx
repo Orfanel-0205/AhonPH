@@ -28,10 +28,10 @@ export function HubPage() {
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
       <h1 className="text-3xl font-extrabold text-brand-strong">
-        Kita<span className="text-text">PH</span> Hub
+        Lakbay<span className="text-text">Mate</span> Hub
       </h1>
       <p className="mt-2 text-muted">
-        Your laptop&apos;s private AI for the KitaPH phone app. Models run on this computer&apos;s GPU through Ollama. Nothing is sent to the internet.
+        Your laptop&apos;s private AI for the LakbayMate phone app. Models run on this computer&apos;s GPU through Ollama. Nothing is sent to the internet.
       </p>
 
       <section className="mt-6 rounded-2xl border border-border bg-surface p-5">
@@ -77,7 +77,7 @@ export function HubPage() {
 
       <section className="mt-4 rounded-2xl border border-border bg-surface p-5">
         <h2 className="text-lg font-bold">Connect your phone</h2>
-        <p className="mt-1 text-sm text-muted">Put the phone on the same Wi-Fi or this laptop&apos;s hotspot. In KitaPH, open Kita AI and type:</p>
+        <p className="mt-1 text-sm text-muted">Put the phone on the same Wi-Fi or this laptop&apos;s hotspot. In LakbayMate, open LakbayMate AI and type:</p>
         {addresses.length ? (
           <ul className="mt-3 space-y-2">
             {addresses.map((a) => (

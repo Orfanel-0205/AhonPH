@@ -53,7 +53,7 @@ export function ScanScreen({ onSaved }: { onSaved: () => void }) {
   const [mode, setMode] = useState<Mode>(settings.trip ? "traveler" : "worker");
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
-  /** Size of the photo a cloud OCR service would have needed; KitaPH uploads none of it. */
+  /** Size of the photo a cloud OCR service would have needed; LakbayMate uploads none of it. */
   const [photoBytes, setPhotoBytes] = useState<number | null>(null);
   const [ocr, setOcr] = useState<OcrResult | null>(null);
   const [busy, setBusy] = useState(false);
@@ -558,6 +558,15 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
             {[abroad.tax !== null ? `includes tax ${local(abroad.tax)}` : null, abroad.payment ? `paid by ${abroad.payment}` : null].filter(Boolean).join(" · ")}
           </Muted>
           <View style={{ marginTop: S.sm }}>
+            {abroad.totalRead !== undefined ? (
+              <View style={{ marginBottom: S.xs }}>
+                <Pill
+                  label={`Total corrected: the camera read ${local(abroad.totalRead)} (the ¥ sign looked like a digit); ${local(abroad.total ?? 0)} matches subtotal + tax.`}
+                  tone="info"
+                  icon="construct"
+                />
+              </View>
+            ) : null}
             {abroad.check.status === "ok" ? (
               <Pill label={`✓ ${abroad.items.length} items add up to the ${abroad.check.against} ${local(abroad.check.printed ?? 0)}`} tone="good" icon="checkmark-circle" />
             ) : abroad.check.status === "mismatch" ? (

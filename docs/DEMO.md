@@ -1,4 +1,4 @@
-# KitaPH — Demo Day playbook
+# LakbayMate — Demo Day playbook
 
 5 minutes live + 3 minutes Q&A. Show the product; one title slide at most. Two people on stage: **the traveler** (holds the phone) and **the clerk** (speaks Japanese or English).
 
@@ -23,7 +23,7 @@
 - Tap **Sila · 日本語**; the clerk says: *「パスポートを見せていただけますか？」* It appears in Filipino, with "✨ read by Gemini Nano".
 - Reply bubbles: "Heto po ang pasaporte ko." Tap it, **edit** it, tap **Isalin at sabihin**. The phone says it in Japanese. Point at **"Means: …"**: "It translates my answer back, so I know it says what I meant."
 - "Our Japanese-speaking teammate found the offline translator stiff, so Gemini Nano now writes Japanese the way people actually say it, and code checks every answer."
-- Share the host's Japanese message to KitaPH: it opens in Usap, read and with replies ready. Tap the share icon on your reply to send it back.
+- Share the host's Japanese message to LakbayMate: it opens in Usap, read and with replies ready. Tap the share icon on your reply to send it back.
 
 **2:00 – 2:50 · Scan the menu.** Scan → the Japanese menu. Japanese OCR on the phone, every price **in pesos**, and Gemini Nano names each dish as it reads ("Tonkatsu set meal · deep-fried pork cutlet"). Point at the allergy note and **0 bytes sent**.
 
@@ -31,14 +31,14 @@
 
 **3:50 – 4:30 · Why local, honestly.** Privacy → **If the cloud disappears**. "Speech, translation, text recognition and Gemini Nano all run on this phone. We only show numbers we measured: on a Taglish test set we never tuned for, 12 of 15 fully right on this phone, 14 of 15 with a laptop model. The test is in the app and the repo."
 
-**4:30 – 5:00 · Close.** "KitaPH: kahit walang internet, may kausap ka, may gabay ka. Even without internet, you can talk, read and stay on budget. Thank you."
+**4:30 – 5:00 · Close.** "LakbayMate: kahit walang internet, may kasama ka sa lakbay. Even offline, you can talk, read and stay on budget. Thank you."
 
 ## If something breaks
 
 | Problem | Do this |
 |---|---|
 | Speech doesn't catch the clerk | Clerk speaks closer and slower, or tap **Type what they said**. Or share the host message instead. |
-| Gemini Nano is slow or errors | Translation falls back to ML Kit and bubbles to the phrasebook automatically; say "KitaPH degrades gracefully." |
+| Gemini Nano is slow or errors | Translation falls back to ML Kit and bubbles to the phrasebook automatically; say "LakbayMate degrades gracefully." |
 | Menu reading is slow | Prices in pesos show first; Gemini Nano's names stream in. Keep talking. |
 | Camera won't focus | Scan → Choose from gallery → the saved menu photo. |
 | Mirroring fails | Hold the phone up and narrate, or play the backup video. |
@@ -47,7 +47,7 @@
 
 **Is the AI really on the device?** Yes, airplane mode is on for the whole demo. Speech recognition uses Android's on-device recognizer (we require on-device mode), translation and text recognition are Google ML Kit's on-device models, and Gemini Nano is the model built into Android. The Privacy screen lists what runs where; the code is public.
 
-**Why not just use Google Translate offline?** It translates; it doesn't hold the conversation with you. KitaPH reads what was said, suggests what to answer, checks your answer by translating it back, reads menus into dish names in pesos, and keeps your trip budget live, all offline and in one place, built for Filipinos.
+**Why not just use Google Translate offline?** It translates; it doesn't hold the conversation with you. LakbayMate reads what was said, suggests what to answer, checks your answer by translating it back, reads menus into dish names in pesos, and keeps your trip budget live, all offline and in one place, built for Filipinos.
 
 **How do you stop the AI from making things up?** The AI proposes and code checks. Japanese from Gemini Nano must be in Japanese script and keep every number, or we use ML Kit. Budget tips can only use amounts the code computed; others are dropped. Receipts must add up to the printed total. Money is computed by tested code, never by the model.
 

@@ -175,7 +175,13 @@ export function tripFacts(plan: TripPlan, s: TripStatus): string {
   const lines = [
     `Trip: ${plan.name}, day ${s.day} of ${s.days}, ${s.daysLeft} day(s) left counting today. Local currency: ${plan.currency}.`,
     `Budget: ${formatPeso(plan.budgetCentavos)}. Spent: ${formatPeso(s.spentCentavos)} (${formatPct(s.usedShare)}). Left: ${both(s.leftCentavos)}.`,
-    `Today: spent ${formatPeso(s.spentTodayCentavos)}. Today's fair share: ${both(s.todayAllowanceCentavos)}. Still OK to spend today: ${both(Math.max(0, s.todayLeftCentavos))}.`,
+    `Today: spent ${formatPeso(s.spentTodayCentavos)}. Today's fair share: ${both(s.todayAllowanceCentavos)}. ${
+      s.todayLeftCentavos > 0
+        ? `Still OK to spend today: ${both(s.todayLeftCentavos)}.`
+        : `Today is already over its share by ${both(-s.todayLeftCentavos)}.${
+            s.daysLeft > 1 && s.leftCentavos > 0 ? ` Tomorrow's share: ${both(Math.floor(s.leftCentavos / (s.daysLeft - 1)))}.` : ""
+          }`
+    }`,
     `Average per day so far: ${formatPeso(s.averagePerDayCentavos)}. Planned per day: ${formatPeso(s.plannedPerDayCentavos)}. At this pace the trip costs ${formatPeso(s.projectedCentavos)}.`,
   ];
   if (s.topCategories.length) {
@@ -185,12 +191,12 @@ export function tripFacts(plan: TripPlan, s: TripStatus): string {
 }
 
 export function tripTipPrompt(facts: string): string {
-  return `You are KitaPH, a friendly travel money buddy for a Filipino traveler abroad.
+  return `You are LakbayMate, a friendly travel money buddy for a Filipino traveler abroad.
 Facts about their trip budget:
 ${facts}
 
 Write exactly 2 short tips (at most 25 words each) for the rest of this trip:
-- Tip 1 is about today: mention the amount they can still spend today, in the local currency, and one cheap way to enjoy the day there.
+- Tip 1 is about today: if they can still spend today, mention that amount in the local currency; if today is already over its share, suggest a free or cheap way to enjoy the rest of the day and mention tomorrow's share.
 - Tip 2 is about their biggest spending category: one specific, cheaper everyday choice that locals use in that country.
 Never suggest buying passes, tours, upgrades or anything that costs more. Only use amounts that appear in the facts; do not invent prices. Be warm, not preachy.
 One tip per line. No numbering, no title.`;

@@ -1,10 +1,10 @@
-# KitaPH — submission answers
+# LakbayMate — submission answers
 
 Copy each field into the Cerebral Valley form. Items in [brackets] still need filling in.
 
-**Project name:** KitaPH
+**Project name:** LakbayMate — Your Smart Travel Companion
 
-**Short description:** KitaPH is an offline travel companion for Filipinos abroad. Talk with anyone: KitaPH hears their language, shows it in Filipino or English, suggests replies you can edit, says your answer aloud in natural Japanese, Korean or Chinese, and translates it back so you can check it. Scan menus to get dish names and prices in pesos. Set a trip budget that updates the moment you log spending, with tips. All the AI runs on the phone (Gemini Nano, ML Kit, on-device speech), so it works in airplane mode.
+**Short description:** LakbayMate is an offline travel companion for Filipinos abroad. Talk with anyone: LakbayMate hears their language, shows it in Filipino or English, suggests replies you can edit, says your answer aloud in natural Japanese, Korean or Chinese, and translates it back so you can check it. Scan menus to get dish names and prices in pesos. Set a trip budget that updates the moment you log spending, with tips. All the AI runs on the phone (Gemini Nano, ML Kit, on-device speech), so it works in airplane mode.
 
 **Team members:** [official team name and member names from appbuildersph.com/hackathon]
 
@@ -14,7 +14,7 @@ Copy each field into the Cerebral Valley form. Items in [brackets] still need fi
 
 ## Why does this product benefit from running AI locally?
 
-Abroad, the cloud really does disappear: no roaming, a dead pocket Wi-Fi, a subway, a plane. That is exactly when a Filipino traveler or OFW needs to talk to a hotel clerk, read a menu, or check if they can still afford dinner. KitaPH stays fully useful offline because every model runs on the phone:
+Abroad, the cloud really does disappear: no roaming, a dead pocket Wi-Fi, a subway, a plane. That is exactly when a Filipino traveler or OFW needs to talk to a hotel clerk, read a menu, or check if they can still afford dinner. LakbayMate stays fully useful offline because every model runs on the phone:
 
 - **Available when it matters.** On-device speech recognition, translation, text recognition and Gemini Nano work in airplane mode (verified on a POCO X7 Pro).
 - **Not expensive.** No roaming or per-request cloud cost to translate a menu, answer a host or check a budget. Each scan shows "0 bytes sent" next to the real photo size.
@@ -29,19 +29,19 @@ Abroad, the cloud really does disappear: no roaming, a dead pocket Wi-Fi, a subw
 - Hand-checked Japanese, Korean and Chinese for common traveler phrases.
 - Reading your reply aloud: Android text-to-speech with offline voices.
 - Menu, sign and receipt reading: Google ML Kit Text Recognition v2 (Latin, Japanese, Korean and Chinese models, bundled in the app).
-- Trip budget (left, today's share, pace), prices in pesos, receipt checks and tips: KitaPH code with bundled BSP exchange rates.
+- Trip budget (left, today's share, pace), prices in pesos, receipt checks and tips: LakbayMate code with bundled BSP exchange rates.
 - All user data: stored only on the phone.
 
 ## What requires internet
 
 - One-time downloads: Gemini Nano (managed by Android), translation language packs (~30 MB each), offline speech packs.
-- Optional KitaPH Cloud (FastAPI + Supabase): refreshing exchange rates and economic figures, and end-to-end encrypted backup. Not needed for any feature above.
+- Optional LakbayMate Cloud (FastAPI + Supabase): refreshing exchange rates and economic figures, and end-to-end encrypted backup. Not needed for any feature above.
 
 ## Disclosures
 
 - **Models used:** Gemini Nano (Android AICore, via ML Kit GenAI Prompt API 1.0.0-beta2); Google ML Kit Text Recognition v2 (Latin, Japanese, Korean, Chinese), Translation 17.0.3 and Language ID 17.0.6; Android on-device speech recognition and text-to-speech; optional laptop hub: Gemma 3 4B and Qwen3-VL 2B via Ollama. Evaluated and not used: Llama 3.2 3B, Gemma 3 1B, Qwen3 1.7B.
 - **Technologies and frameworks:** Expo SDK 57, React Native 0.86, TypeScript, Kotlin (Expo Modules API), expo-speech-recognition, expo-speech, expo-image-picker, expo-network, AsyncStorage, `@react-native-ml-kit/text-recognition`; Next.js 16, React 19, Tailwind CSS 4; Vitest; FastAPI, httpx, uvicorn, pytest.
-- **APIs and cloud services:** Android AICore, Android speech services, the Android share sheet and Google ML Kit (all on-device). Optional and secondary: Render (hosting) and Supabase (Postgres/Auth) for KitaPH Cloud. No cloud AI APIs.
+- **APIs and cloud services:** Android AICore, Android speech services, the Android share sheet and Google ML Kit (all on-device). Optional and secondary: Render (hosting) and Supabase (Postgres/Auth) for LakbayMate Cloud. No cloud AI APIs.
 - **Existing code and assets:** project scaffolds from `create-next-app`, `create-expo-app` (blank TypeScript template) and `create-expo-module`. All other code, the phrasebook and its translations, the app icon and the test images were made during the hackathon (git history starts Oct 9, 2026, 2:38 PM).
 - **Data sources:** BSP Reference Exchange Rate Bulletin (Oct 8, 2026, 19 currencies), PSA CPI September 2026, DOLE Wage Order NCR-28.
 - **AI development tools:** Claude Code (Anthropic).
@@ -59,6 +59,6 @@ Observed on the phone (single runs, not benchmarks): Gemini Nano budget tips in 
 
 ## Suggested post (X / LinkedIn)
 
-> We built KitaPH at #AppBuildersPH 2026: an offline travel companion for Filipinos abroad. Talk with anyone in natural Japanese, read menus as dish names in pesos, and keep a live trip budget, with the AI running entirely on the phone (Gemini Nano + ML Kit). Airplane mode on, still works. [video link] [repo link]
+> We built LakbayMate at #AppBuildersPH 2026: an offline travel companion for Filipinos abroad. Talk with anyone in natural Japanese, read menus as dish names in pesos, and keep a live trip budget, with the AI running entirely on the phone (Gemini Nano + ML Kit). Airplane mode on, still works. [video link] [repo link]
 
 Tag Devin / Cognition as required; check their handles before posting.

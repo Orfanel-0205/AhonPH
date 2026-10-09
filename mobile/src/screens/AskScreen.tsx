@@ -147,7 +147,7 @@ export function AskScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
   return (
     <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>Gastos</Text>
-      <Muted style={{ marginBottom: S.md }}>No receipt? Just say it: &quot;taxi 2,300 yen&quot;. KitaPH logs it in pesos and answers money questions in Taglish, on your phone.</Muted>
+      <Muted style={{ marginBottom: S.md }}>No receipt? Just say it: &quot;taxi 2,300 yen&quot;. LakbayMate logs it in pesos and answers money questions in Taglish, on your phone.</Muted>
 
       <View style={[styles.wrap, { marginBottom: S.sm }]}>
         {engines.map((e) => (
@@ -342,7 +342,7 @@ function Advisor({ engine, context, suggestions }: { engine: Engine; context: st
 
   return (
     <Card>
-      <H2>Tanong kay Kita</H2>
+      <H2>Tanong kay LakbayMate</H2>
       <View style={[styles.wrap, { marginBottom: S.sm }]}>
         {suggestions.map((s) => (
           <Chip key={s} label={s} onPress={() => ask(s)} />
@@ -378,7 +378,7 @@ function Advisor({ engine, context, suggestions }: { engine: Engine; context: st
       <View style={{ marginTop: S.sm }}>
         <Button label="Ask" icon="send" onPress={() => ask(q)} busy={busy} disabled={!q.trim()} />
       </View>
-      <Muted style={{ marginTop: S.sm }}>Estimates only, not professional financial advice. Every number Kita uses is computed on this phone from your records.</Muted>
+      <Muted style={{ marginTop: S.sm }}>Estimates only, not professional financial advice. Every number LakbayMate uses is computed on this phone from your records.</Muted>
     </Card>
   );
 }

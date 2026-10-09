@@ -326,10 +326,10 @@ export function TalkScreen({ incoming, onIncomingRead }: { incoming?: string | n
           <Card style={{ marginTop: S.md }}>
             <Muted>
               Tap <Text style={{ fontWeight: "700" }}>Sila</Text> and let them speak {langLabel(them)}. You&apos;ll read it in {langLabel(me)} with reply ideas.
-              Tap a reply, edit it if you like, and KitaPH says it in {langLabel(them)}.
+              Tap a reply, edit it if you like, and LakbayMate says it in {langLabel(them)}.
             </Muted>
             <Muted style={{ marginTop: S.sm }}>
-              Got a message from your host or driver on a chat app? Share it to <Text style={{ fontWeight: "700" }}>KitaPH</Text> to read and answer it,
+              Got a message from your host or driver on a chat app? Share it to <Text style={{ fontWeight: "700" }}>LakbayMate</Text> to read and answer it,
               even offline.
             </Muted>
           </Card>

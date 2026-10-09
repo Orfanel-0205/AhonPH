@@ -1,5 +1,5 @@
 /**
- * Client for the optional KitaPH Hub: the user's own laptop running Ollama, reached over local Wi-Fi.
+ * Client for the optional LakbayMate Hub: the user's own laptop running Ollama, reached over local Wi-Fi.
  * No internet is involved; the phone talks to an address like http://192.168.1.20:3000.
  */
 import type { ParsedRecord } from "./shared";
@@ -50,7 +50,7 @@ async function postJson<T>(url: string, body: unknown, ms: number): Promise<{ ok
     }
     return { ok: true, data: (url.endsWith("/advise") ? text : JSON.parse(text)) as T };
   } catch {
-    return { ok: false, error: "Can't reach the KitaPH Hub. Check that the phone and laptop are on the same Wi-Fi." };
+    return { ok: false, error: "Can't reach the LakbayMate Hub. Check that the phone and laptop are on the same Wi-Fi." };
   }
 }
 

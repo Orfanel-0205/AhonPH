@@ -55,6 +55,76 @@ describe("receipts abroad", () => {
     expect(r.check).toEqual({ status: "ok", itemsSum: 19500, against: "subtotal", printed: 19500 });
   });
 
+  it("skips an address with block numbers and reads the AI Lab's sample receipt", () => {
+    const r = parseForeignReceipt([
+      "居酒屋 さくら",
+      "東京都新宿区西新宿1-2-3",
+      "TEL 03-0000-0000",
+      "2026年10月10日(土)  19:42",
+      "生ビール",
+      "¥600  2  ¥1,200",
+      "枝豆",
+      "¥400  1  ¥400",
+      "焼き鳥盛り合わせ",
+      "¥1,200  1  ¥1,200",
+      "唐揚げ",
+      "¥700  1  ¥700",
+      "親子丼",
+      "¥950  1  ¥950",
+      "小計  ¥4,450",
+      "消費税(10%)  ¥445",
+      "合計  ¥4,895",
+      "お預り  ¥5,000",
+      "お釣り  ¥105",
+    ])!;
+    expect(r.store).toBe("居酒屋 さくら");
+    expect(r.items.map((i) => i.name)).toEqual(["生ビール", "枝豆", "焼き鳥盛り合わせ", "唐揚げ", "親子丼"]);
+    expect(r.check).toEqual({ status: "ok", itemsSum: 4450, against: "subtotal", printed: 4450 });
+    expect(r.tax).toBe(445);
+    expect(r.total).toBe(4895);
+  });
+
+  it("rejoins amounts that OCR splits after the comma (¥4, 450)", () => {
+    const r = parseForeignReceipt(["生ビール", "¥600  2  ¥1, 200", "親子丼", "¥950  1  ¥950", "小計  ¥2, 150", "合計  ¥2, 365"])!;
+    expect(r.items.map((i) => i.total)).toEqual([1200, 950]);
+    expect(r.check).toEqual({ status: "ok", itemsSum: 2150, against: "subtotal", printed: 2150 });
+    expect(r.total).toBe(2365);
+  });
+
+  it("repairs a total whose ¥ sign was read as 4, using subtotal + tax (real phone OCR of the demo receipt)", () => {
+    // As read on the phone, Oct 10, 2026: ¥ came out as "Y", "\" and, before the big total, "4".
+    const r = parseForeignReceipt([
+      "居酒屋さきくら",
+      "東京都新宿区西新宿1-2-3",
+      "TEL 03-0000-0000",
+      "2026年10月10日 (土) 19:42",
+      "生ビール",
+      "Y600  2  1, 200",
+      "枝豆",
+      "\\400  1  ¥400",
+      "焼き鳥盛り合わせ",
+      "¥1, 200  1  ¥1, 200",
+      "唐揚げ",
+      "¥700  1  ¥700",
+      "親子井",
+      "Y950  1  ¥950",
+      "小計  Y4, 450",
+      "消費税 (10%)  Y445",
+      "合計  44, 895",
+      "お預り  ¥5, 000",
+      "お釣り  ¥105",
+      "ありがとうございました",
+    ])!;
+    expect(r.items.map((i) => i.total)).toEqual([1200, 400, 1200, 700, 950]);
+    expect(r.check.status).toBe("ok");
+    expect(r.total).toBe(4895);
+    expect(r.totalRead).toBe(44895);
+  });
+
+  it("leaves a tax-inclusive total alone", () => {
+    expect(parseForeignReceipt(JP_RECEIPT)!.totalRead).toBeUndefined();
+  });
+
   it("flags items that don't add up", () => {
     const r = parseForeignReceipt(["コーヒー  ¥450", "サンド  ¥600", "合計  ¥1,150"])!;
     expect(r.check.status).toBe("mismatch");

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "KitaPH",
-    "slug": "kitaph",
+    "name": "LakbayMate",
+    "slug": "lakbaymate",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -33,7 +33,7 @@
       [
         "expo-image-picker",
         {
-          "cameraPermission": "KitaPH uses the camera to scan receipts. Photos are read on your phone and never uploaded."
+          "cameraPermission": "LakbayMate uses the camera to scan receipts. Photos are read on your phone and never uploaded."
         }
       ],
       [
@@ -56,8 +56,8 @@
       [
         "expo-speech-recognition",
         {
-          "microphonePermission": "KitaPH listens only while you hold the mic, and speech is turned into text on your phone.",
-          "speechRecognitionPermission": "KitaPH turns speech into text on your phone.",
+          "microphonePermission": "LakbayMate listens only while you hold the mic, and speech is turned into text on your phone.",
+          "speechRecognitionPermission": "LakbayMate turns speech into text on your phone.",
           "androidSpeechServicePackages": [
             "com.google.android.as",
             "com.google.android.tts",
@@ -66,6 +66,6 @@
         }
       ]
     ],
-    "description": "Offline travel companion for Filipinos abroad: talk with locals, read menus and signs, and track spending, with AI that runs on the phone."
+    "description": "LakbayMate, your smart travel companion: talk with locals, read menus, signs and receipts, and keep a live trip budget, with AI that runs on the phone and works offline."
   }
 }

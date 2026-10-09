@@ -2,6 +2,7 @@ package ph.kitaph.ondevice
 
 import android.content.Intent
 import android.graphics.Bitmap
+import android.net.TrafficStats
 import android.graphics.BitmapFactory
 import android.net.Uri
 import com.google.android.gms.tasks.Task
@@ -38,7 +39,7 @@ private suspend fun <T> Task<T>.awaitResult(): T = suspendCancellableCoroutine {
 }
 
 /**
- * Every AI model KitaPH uses on the phone, in one place. Nothing here touches the network except the
+ * Every AI model LakbayMate uses on the phone, in one place. Nothing here touches the network except the
  * one-time model downloads (Gemini Nano via Android AICore, ML Kit translation packs).
  *  - Gemini Nano (Android's built-in LLM) through the ML Kit GenAI Prompt API
  *  - ML Kit on-device translation, with translators kept open between calls
@@ -51,7 +52,7 @@ class KitaOnDeviceModule : Module() {
     LanguageIdentification.getClient(LanguageIdentificationOptions.Builder().setConfidenceThreshold(0.5f).build())
   }
 
-  /** Text shared to KitaPH (e.g. a host's message from a chat app) while the app was already open. */
+  /** Text shared to LakbayMate (e.g. a host's message from a chat app) while the app was already open. */
   private var pendingShare: String? = null
 
   private fun sharedText(intent: Intent?): String? =
@@ -87,7 +88,23 @@ class KitaOnDeviceModule : Module() {
     Name("KitaOnDevice")
     Events("onNanoDownload", "onNanoText", "onSharedText")
 
-    // ---------- Share to KitaPH ----------
+    // ---------- AI Lab ----------
+
+    /** Bytes this app has sent and received since boot (Android TrafficStats), to show a demo used no network. */
+    Function("appNetworkBytes") {
+      val uid = android.os.Process.myUid()
+      mapOf("sent" to TrafficStats.getUidTxBytes(uid).toDouble(), "received" to TrafficStats.getUidRxBytes(uid).toDouble())
+    }
+
+    /** Copies a sample image bundled in the app to the cache and returns its file URI (no network). */
+    AsyncFunction("demoImage") { name: String ->
+      val ctx = appContext.reactContext ?: throw CodedException("App context unavailable")
+      val out = java.io.File(ctx.cacheDir, name)
+      if (!out.exists()) ctx.assets.open(name).use { input -> out.outputStream().use { input.copyTo(it) } }
+      Uri.fromFile(out).toString()
+    }
+
+    // ---------- Share to LakbayMate ----------
 
     OnNewIntent { intent ->
       sharedText(intent)?.let {

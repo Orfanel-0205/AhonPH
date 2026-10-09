@@ -67,6 +67,13 @@ describe("trip budget", () => {
     expect(tripTips(plan, after)[0].title).toContain("₱10,000 under budget");
   });
 
+  it("gives tomorrow's share to the AI when today is already over", () => {
+    const facts = tripFacts(plan, tripStatus(plan, [tx("2026-10-10", 12_000), tx("2026-10-11", 15_000)], "2026-10-11"));
+    expect(facts).toContain("Today is already over its share by ₱5,500");
+    expect(facts).toContain("Tomorrow's share: ₱7,667");
+    expect(facts).not.toContain("Still OK to spend today");
+  });
+
   it("shows amounts in the trip currency too", () => {
     const facts = tripFacts(plan, tripStatus(plan, [tx("2026-10-10", 3_972)], "2026-10-10"));
     expect(facts).toContain("Left: ₱46,028");

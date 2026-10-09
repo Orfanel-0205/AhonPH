@@ -23,7 +23,7 @@ const TABS: { id: Tab; label: string; icon: IconName }[] = [
   { id: "talk", label: "Usap", icon: "chatbox-ellipses" },
   { id: "scan", label: "Scan", icon: "scan" },
   { id: "ask", label: "Gastos", icon: "wallet" },
-  { id: "privacy", label: "Privacy", icon: "shield-checkmark" },
+  { id: "privacy", label: "AI Lab", icon: "flask" },
 ];
 
 /** Live connectivity, so the demo can show the app still working with the network off. */
@@ -70,9 +70,12 @@ function Shell() {
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={["top", "bottom"]}>
       <StatusBar style="dark" />
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: C.surface }}>
-        <Text style={{ fontSize: 20, fontWeight: "800", color: C.brandStrong }}>
-          Kita<Text style={{ color: C.text }}>PH</Text>
-        </Text>
+        <View>
+          <Text style={{ fontSize: 20, fontWeight: "800", color: C.brandStrong }}>
+            Lakbay<Text style={{ color: C.text }}>Mate</Text>
+          </Text>
+          <Text style={{ fontSize: 11, color: C.muted, marginTop: -2 }}>Your Smart Travel Companion</Text>
+        </View>
         <NetworkChip />
       </View>
 

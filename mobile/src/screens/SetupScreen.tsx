@@ -105,19 +105,19 @@ export function SetupScreen({ onDone }: { onDone: () => void }) {
     <ScrollView contentContainerStyle={[styles.screen, { paddingTop: S.xl }]}>
       <Text style={styles.title}>Set up your private AI</Text>
       <Muted style={{ marginTop: S.xs, marginBottom: S.lg }}>
-        KitaPH&apos;s AI runs on this phone. Do these one-time downloads now on Wi-Fi, and everything works offline afterwards, even in airplane
+        LakbayMate&apos;s AI runs on this phone. Do these one-time downloads now on Wi-Fi, and everything works offline afterwards, even in airplane
         mode. Your receipts and money data never leave the phone.
       </Muted>
 
-      <Step icon="scan" title="Receipt reader" body="Google ML Kit text recognition. Built into KitaPH, nothing to download." state="ready" />
+      <Step icon="scan" title="Receipt reader" body="Google ML Kit text recognition. Built into LakbayMate, nothing to download." state="ready" />
 
       <Step
         icon="sparkles"
-        title="Kita AI · Gemini Nano"
+        title="LakbayMate AI · Gemini Nano"
         body={
           nanoState === "unavailable"
-            ? "This phone doesn't have Android's built-in AI. KitaPH will use your laptop hub if you connect one, or basic mode."
-            : "Android's built-in language model, for Taglish logging and advice. Android downloads and updates it, not KitaPH."
+            ? "This phone doesn't have Android's built-in AI. LakbayMate will use your laptop hub if you connect one, or basic mode."
+            : "Android's built-in language model, for Taglish logging and advice. Android downloads and updates it, not LakbayMate."
         }
         state={nanoState}
         action={
@@ -176,7 +176,7 @@ export function SetupScreen({ onDone }: { onDone: () => void }) {
       />
 
       <Button
-        label={allSet ? "All set — start using KitaPH" : "Continue (finish later in Privacy)"}
+        label={allSet ? "All set — start using LakbayMate" : "Continue (finish later in Privacy)"}
         icon="arrow-forward"
         onPress={() => {
           setSettings({ setupDone: true });

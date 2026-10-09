@@ -30,8 +30,10 @@ ${lines
   .map((l, i) => `${i + 1}. ${l}`)
   .join("\n")}
 For a Filipino traveler, give each line its common English name. For food and drink, add at most 10 words on what it is and say if it usually has pork, beef, seafood or alcohol. For anything else, write only the English name.
-The camera can confuse similar characters (like 井 and 丼), so guess the intended word. If you really don't know, write: number. not sure
-Format each line exactly as: number. English name | what it is (or just: number. English name)`;
+The camera can confuse similar characters (like 井 and 丼), so guess the intended word. If you really don't know, write the line number and "not sure".
+Answer one line per item, numbered like the list, for example:
+1. Draft beer | cold beer from the tap; alcohol
+2. Receipt`;
 }
 
 export interface MenuReading {
@@ -49,7 +51,11 @@ const LEADING_ORIGINAL = new RegExp(String.raw`^[${CJK_CHARS}\s]+[-–—:]\s*`,
 export function parseMenuReading(text: string, count: number): Map<number, MenuReading> {
   const out = new Map<number, MenuReading>();
   for (const raw of text.split("\n")) {
-    const m = raw.replace(/\*\*/g, "").match(/^\s*(\d+)[.)]\s*(.+)$/);
+    // Small models sometimes copy the format word: "1. number. Draft Beer".
+    const m = raw
+      .replace(/\*\*/g, "")
+      .match(/^\s*(\d+)[.)]\s*(.+)$/)
+      ?.map((g, k) => (k === 2 ? g.replace(/^(?:number|no)\.\s*/i, "") : g));
     if (!m) continue;
     const i = Number(m[1]) - 1;
     if (i < 0 || i >= Math.min(count, MENU_MAX_LINES) || out.has(i)) continue;

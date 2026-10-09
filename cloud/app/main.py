@@ -1,5 +1,5 @@
 """
-KitaPH Cloud — the optional, secondary part of KitaPH.
+LakbayMate Cloud — the optional, secondary part of LakbayMate.
 
 The app's AI runs on the phone (and on the user's own laptop hub). This service only:
   1. serves refreshed reference data (BSP exchange rates, PSA/DOLE figures) when the phone is online, and
@@ -24,7 +24,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
 MAX_CIPHERTEXT_CHARS = 2_000_000
 
-app = FastAPI(title="KitaPH Cloud", version="1.0.0", docs_url="/docs")
+app = FastAPI(title="LakbayMate Cloud", version="1.0.0", docs_url="/docs")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "PUT", "DELETE"], allow_headers=["*"])
 
 # Same figures the app bundles (src/lib/econ.ts, src/lib/rates.ts). Supabase rows override these when present.

@@ -1,5 +1,5 @@
 /**
- * Thin client for the local Ollama server. Every AI call in KitaPH goes through here,
+ * Thin client for the local Ollama server. Every AI call in LakbayMate goes through here,
  * and this only ever talks to the machine's own Ollama (127.0.0.1 by default).
  */
 

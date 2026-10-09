@@ -23,7 +23,23 @@ export const TRAVELER_LANGUAGES: { code: string; label: string }[] = [
 const SUPPORTED_SOURCES = new Set(["en", "tl", "ko", "ja", "zh", "es", "fr", "de", "id", "ms", "vi", "th", "ar"]);
 
 /** Detects the language of scanned text on-device; Filipino text is reported as "tl". */
-/** Calls back with text shared to KitaPH from another app (now, if the share opened the app, and later). */
+/** Bytes LakbayMate itself has sent/received since boot (Android TrafficStats); null where unsupported. */
+export function appNetworkBytes(): { sent: number; received: number } | null {
+  try {
+    const b = OnDevice?.appNetworkBytes();
+    return b && b.sent >= 0 && b.received >= 0 ? b : null;
+  } catch {
+    return null;
+  }
+}
+
+/** File URI of a sample image bundled in the app (for the AI Lab demo). */
+export async function demoImage(name: string): Promise<string> {
+  if (!OnDevice) throw new Error("The on-device module is not in this build.");
+  return OnDevice.demoImage(name);
+}
+
+/** Calls back with text shared to LakbayMate from another app (now, if the share opened the app, and later). */
 export function onSharedText(cb: (text: string) => void): () => void {
   if (!OnDevice) return () => {};
   const take = () => {

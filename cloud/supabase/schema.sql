@@ -1,4 +1,4 @@
--- KitaPH Cloud schema. Run in the Supabase SQL editor.
+-- LakbayMate Cloud schema. Run in the Supabase SQL editor.
 -- Backups are end-to-end encrypted on the phone; these columns hold ciphertext only.
 
 create table if not exists public.backups (

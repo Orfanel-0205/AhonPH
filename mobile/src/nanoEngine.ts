@@ -1,5 +1,5 @@
 /**
- * KitaPH's language AI on the phone itself: Gemini Nano (built into Android).
+ * LakbayMate's language AI on the phone itself: Gemini Nano (built into Android).
  * Same prompts and the same code checks as the laptop hub; only the model differs.
  */
 import { nanoGenerate, OnDevice } from "./onDevice";
@@ -25,7 +25,7 @@ function friendly(e: unknown): Error {
   const msg = e instanceof Error ? e.message : String(e);
   if (/quota|busy|PER_APP/i.test(msg)) return new Error("The phone's AI is busy. Wait a few seconds and try again.");
   if (/not.*(available|downloaded)|UNAVAILABLE/i.test(msg)) return new Error("On-device AI isn't ready. Open Privacy, then Offline AI setup.");
-  if (/background|foreground/i.test(msg)) return new Error("Keep KitaPH open while the phone's AI is working.");
+  if (/background|foreground/i.test(msg)) return new Error("Keep LakbayMate open while the phone's AI is working.");
   const firstLine = msg.split("\n")[0].slice(0, 120);
   return new Error(`The phone's AI couldn't answer (${firstLine}).`);
 }
@@ -74,7 +74,7 @@ export async function phoneAdvise(
 ): Promise<{ text: string; ms: number }> {
   const transcript = history
     .slice(-4)
-    .map((t) => `${t.role === "user" ? "User" : "Kita"}: ${t.content.slice(0, 600)}`)
+    .map((t) => `${t.role === "user" ? "User" : "LakbayMate"}: ${t.content.slice(0, 600)}`)
     .join("\n");
   const prompt = `${ADVISOR_SYSTEM_PROMPT}\n\n${transcript ? `Earlier conversation:\n${transcript}\n\n` : ""}${advisorUserMessage(context, question)}`;
   let r: Awaited<ReturnType<typeof nanoGenerate>>;

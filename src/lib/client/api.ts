@@ -20,7 +20,7 @@ async function postJson<T>(url: string, body: unknown, timeoutMs = 150_000): Pro
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch {
-    return { ok: false, error: "Can't reach the KitaPH app server on this computer. Is it still running?" };
+    return { ok: false, error: "Can't reach the LakbayMate app server on this computer. Is it still running?" };
   }
   const data = (await res.json().catch(() => null)) as (T & { error?: string }) | null;
   if (!res.ok || !data) return { ok: false, error: data?.error ?? `Request failed (${res.status}).` };
@@ -63,7 +63,7 @@ export async function askAdvisor(
       signal: AbortSignal.timeout(150_000),
     });
   } catch {
-    return { ok: false, error: "Can't reach the KitaPH app server on this computer. Is it still running?" };
+    return { ok: false, error: "Can't reach the LakbayMate app server on this computer. Is it still running?" };
   }
   if (!res.ok || !res.body) {
     const data = (await res.json().catch(() => null)) as { error?: string } | null;

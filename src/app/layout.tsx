@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "KitaPH — Private money assistant",
+  title: "LakbayMate Hub — Your Smart Travel Companion",
   description: "A Taglish money assistant for Filipino workers. The AI runs on your own device, so your finances never leave it.",
 };
 
