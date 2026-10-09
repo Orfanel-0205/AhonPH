@@ -96,11 +96,12 @@ Caveats: we wrote all sentences ourselves; the "pinadala" family rule in `src/li
 - Oct 9, ~11:53 PM: a Japanese host message shared to KitaPH (明日のチェックアウトは11時です。荷物はフロントでお預かりできますので…) was read by Gemini Nano as "Your check-out time is 11:00 AM tomorrow. You can leave your luggage at the front desk…". The reply was then said in Japanese in airplane mode.
 - Oct 10, ~1:45 AM: Gemini Nano trip tips took 4.3 s and 4.6 s, and both runs passed the amount check. Logging "taxi 2300 yen" (−₱913.56) turned the sample trip's "today" box from ₱764 left to ₱149 over its share at once.
 - Oct 10, ~2:00 AM, on a **synthetic** Japanese menu image we rendered on the laptop (6 dishes): Japanese OCR took 0.2 s. Gemini Nano named 6 of 6 dishes in 18.1 s. With a prompt asking for shorter notes, two more runs named 6 of 6 in 18.3 s and 3 of 6 in 7.8 s; ML Kit's translation stayed for the 3 it skipped. Real menus have not been measured.
+- Oct 10, ~2:15 AM, one photo of a sample Japanese restaurant receipt (30 printed lines). Japanese OCR read 18 of the 19 money amounts exactly; ¥2,000 came out as "2.000". Store, address and slip words had 4 character slips (e.g. 搬 for 農). Before this change the app found only a table number ("¥2") and the totals. **We then wrote the Japanese receipt reader using this receipt** (it is a unit-test fixture, so this is not a held-out result): it now finds all 5 items with quantities, checks that they add up to 商品計 ¥19,500, and shows 合計 ¥20,940 ≈ ₱8,317 with tax ¥1,842. Gemini Nano named 5 of 5 items in 11.2 s. Saving it updated the trip budget at once.
 - Speech recognition starts on the phone for installed languages (ja-JP, en-GB). An end-to-end test with a live speaker is still to be done.
 
 Japanese quality was judged by our team, not formally evaluated. The hand-written Japanese, Korean and Chinese phrases are in `src/lib/talk.ts` for anyone to check.
 
-**Other checks.** Receipt vision with Qwen3-VL 2B on the hub read 1 synthetic receipt exactly (one generated image only). The on-device receipt reader is unit-tested on hand-built OCR layouts and one real phone OCR fixture; accuracy on real receipts has not been measured. Unit tests: `npm test` (112) and `cd cloud && pytest` (5).
+**Other checks.** Receipt vision with Qwen3-VL 2B on the hub read 1 synthetic receipt exactly (one generated image only). The on-device receipt reader is unit-tested on hand-built OCR layouts and one real phone OCR fixture; accuracy on real receipts has not been measured. Unit tests: `npm test` (118) and `cd cloud && pytest` (5).
 
 ## Running it
 

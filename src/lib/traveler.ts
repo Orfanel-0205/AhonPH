@@ -99,6 +99,10 @@ export function findPrices(rows: string[], from: CurrencyCode | null, to: Curren
     // A real item name has at least two letters in any script (ラーメン, 김치찌개, Adobo).
     if (!/\p{L}{2,}/u.test(label)) continue;
     if (/\b(TIN|NO\.?|TEL|PHONE|CEL|DATE|TIME|SI|OR|QTY|ITEMS?)\b/i.test(label) && !/TOTAL/i.test(label)) continue;
+    // "テーブル:2", "Table: 4": a field and its number, not a price (no currency sign next to it).
+    const marked = /[^\d\s.,]/u.test(m[0].replace(m[1], ""));
+    if (!marked && /[:：]\s*$/u.test(row.slice(0, m.index))) continue;
+    if (/(テーブル|卓番|担当|伝票|名様|테이블|번호|桌号|人数)/u.test(label)) continue;
     const value = Number(m[1].replace(/,/g, ""));
     if (!(value > 0) || value > 10_000_000) continue;
     const phpCentavos = from ? convertToPhp(value, from) : toCentavos(value);

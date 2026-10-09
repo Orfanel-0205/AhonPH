@@ -3,7 +3,7 @@ export type { AppData, Budgets, CategoryId, Centavos, ExpenseCategory, Receipt, 
 export { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "../../src/lib/types";
 export { EXPENSE_INFO, INCOME_INFO, categoryLabel } from "../../src/lib/categories";
 export { addDays, formatDate, todayISO } from "../../src/lib/dates";
-export { formatPct, formatPeso, toCentavos } from "../../src/lib/money";
+export { formatPct, formatPeso, roundToPeso, toCentavos } from "../../src/lib/money";
 export { budgetStatuses, makePeriod, summarize, type PeriodKind, type Summary } from "../../src/lib/finance";
 export { buildInsights, type Insight, type Severity } from "../../src/lib/insights";
 export { personalInflation, yearOnYearWindows, type PersonalInflation } from "../../src/lib/inflation";
@@ -12,6 +12,7 @@ export { buildAdvisorContext } from "../../src/lib/advisorContext";
 export { findUngroundedNumbers } from "../../src/lib/numbers";
 export { checkReceipt, checkReceiptWithSubtotal, type ReceiptCheck } from "../../src/lib/receipt";
 export { linesToRows, parseOcrReceipt, type OcrLine, type ScannedReceipt } from "../../src/lib/ocrReceipt";
+export { parseForeignReceipt, type ForeignReceipt } from "../../src/lib/foreignReceipt";
 export { languageName, MENU_MAX_LINES, menuPrompt, parseMenuReading, type MenuReading } from "../../src/lib/menu";
 export { breakdownReceipt, receiptTips, type GroupTotal } from "../../src/lib/receiptInsights";
 export { findPricedLines, findPrices, explainCharges, type ChargeNote, type PricedLine, type Price } from "../../src/lib/traveler";

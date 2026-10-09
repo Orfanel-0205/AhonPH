@@ -39,9 +39,17 @@ describe("trip budget", () => {
     expect(s.state).toBe("near");
     const ids = tripTips(plan, s).map((t) => t.id);
     expect(ids).toContain("trip-pace");
-    expect(ids).toContain("trip-today-over");
+    // Said once: the pace tip covers the coming days.
+    expect(ids).not.toContain("trip-today-over");
     // ₱20,000 left for the 3 days after today.
     expect(tripTips(plan, s).find((t) => t.id === "trip-pace")!.body).toContain("Keep the next 3 days to ₱6,667");
+  });
+
+  it("says when one day went past its share, even on pace", () => {
+    // ₱45,000 left this morning for 4 days is ₱11,250; ₱12,000 spent today.
+    const s = tripStatus(plan, [tx("2026-10-10", 5_000), tx("2026-10-11", 12_000)], "2026-10-11");
+    const tip = tripTips(plan, s).find((t) => t.id === "trip-today-over")!;
+    expect(tip.body).toContain("Tomorrow's share is now ₱11,000");
   });
 
   it("says when the budget is gone", () => {

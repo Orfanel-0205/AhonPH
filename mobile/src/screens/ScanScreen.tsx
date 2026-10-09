@@ -1,5 +1,5 @@
 import * as ImagePicker from "expo-image-picker";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { BarRow, Button, Card, Chip, ErrorBox, H2, InsightCard, Muted, Pill, styles } from "../components";
 import { ExplainReceipt, receiptContext } from "../ExplainReceipt";
@@ -25,9 +25,11 @@ import {
   formatPct,
   formatPeso,
   FX,
+  roundToPeso,
   isNanoLang,
   linesToRows,
   MENU_MAX_LINES,
+  parseForeignReceipt,
   parseOcrReceipt,
   receiptTips,
   toCentavos,
@@ -39,6 +41,7 @@ import {
   type ReceiptItem,
   type ScannedReceipt,
 } from "../shared";
+import { TripCard } from "../TripBudget";
 import { newId, useStore } from "../store";
 import { C, S } from "../theme";
 
@@ -352,10 +355,13 @@ function WorkerResult({ ocr, imageUri, imageBase64, onSaved }: { ocr: OcrResult;
 }
 
 const CURRENCIES = Object.keys(FX.phpPerUnit) as CurrencyCode[];
+/** Currencies printed without centavos, where "2.000" is a misread "2,000". */
+const WHOLE_NUMBER_CURRENCIES: CurrencyCode[] = ["JPY", "KRW", "TWD", "VND", "IDR"];
+const SAVE_CATEGORIES: ExpenseCategory[] = ["food", "transport", "leisure", "personal", "other"];
 const TARGETS = [{ code: "tl", label: "Filipino" }, ...TRAVELER_LANGUAGES];
 
 function TravelerResult({ ocr }: { ocr: OcrResult }) {
-  const { settings, setSettings } = useStore();
+  const { settings, setSettings, update } = useStore();
   const today = todayISO();
   const receipt: ScannedReceipt | null = useMemo(() => parseOcrReceipt(ocr.lines, today), [ocr, today]);
   // A menu has no TOTAL, so the receipt parser gives up; rows still pair each name with its price.
@@ -366,6 +372,17 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
   const toCurrency = fromCurrency ? null : settings.currency;
   const priced = useMemo(() => findPrices(rows, fromCurrency, toCurrency), [rows, fromCurrency, toCurrency]);
   const notes = useMemo(() => (fromCurrency ? [] : explainCharges(rows)), [rows, fromCurrency]);
+  // A receipt abroad (合計 / 합계 / 合计): items with quantities, an add-up check, and a total to save.
+  const abroad = useMemo(() => {
+    if (!fromCurrency || receipt?.totalFound) return null;
+    const r = parseForeignReceipt(rows, { wholeNumbers: WHOLE_NUMBER_CURRENCIES.includes(fromCurrency) });
+    return r && r.items.length && (r.total !== null || r.subtotal !== null) ? r : null;
+  }, [rows, fromCurrency, receipt]);
+  // The names to translate and explain: receipt items, else priced menu lines.
+  const names = useMemo(() => (abroad ? abroad.items.map((i) => i.name) : priced.map((p) => p.label)), [abroad, priced]);
+  const [category, setCategory] = useState<ExpenseCategory>("food");
+  const [savedAbroad, setSavedAbroad] = useState(false);
+  const [showLangs, setShowLangs] = useState(false);
   const [target, setTarget] = useState<string>(settings.targetLang);
   const targetLabel = TARGETS.find((l) => l.code === target)?.label ?? target;
 
@@ -377,8 +394,8 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
   const nano = useNano();
   const [menu, setMenu] = useState<{ readings: Map<number, MenuReading>; ms: number } | null>(null);
   const [menuBusy, setMenuBusy] = useState(false);
-  // Priced lines when there are prices (a menu); otherwise the first lines (a sign).
-  const menuLines = useMemo(() => (priced.length ? priced.map((p) => p.label) : rows).slice(0, MENU_MAX_LINES), [priced, rows]);
+  // Item names on a receipt or menu; otherwise the first lines (a sign).
+  const menuLines = useMemo(() => (names.length ? names : rows).slice(0, MENU_MAX_LINES), [names, rows]);
 
   /** Gemini Nano reads the menu from the original text; notes are put into Filipino on the phone if needed. */
   async function readMenu() {
@@ -428,13 +445,13 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
     setPhase("translating");
     try {
       // Two calls in total: scanned text (detected language → target) and the English notes (→ target).
-      const main = await translateTexts([...priced.map((p) => p.label), rows.join("\n")], source, target);
+      const main = await translateTexts([...names, rows.join("\n")], source, target);
       const noteTexts = notes.flatMap((n) => [n.title, n.body]);
       const nt = target === "en" || noteTexts.length === 0 ? { texts: noteTexts, ms: 0 } : await translateTexts(noteTexts, "en", target);
       setTranslated({
         lang: target,
-        labels: main.texts.slice(0, priced.length),
-        text: main.texts[priced.length] ?? "",
+        labels: main.texts.slice(0, names.length),
+        text: main.texts[names.length] ?? "",
         notes: notes.map((n, i) => ({ ...n, title: nt.texts[i * 2] ?? n.title, body: nt.texts[i * 2 + 1] ?? n.body })),
         ms: main.ms + nt.ms,
       });
@@ -443,7 +460,7 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
     } finally {
       setPhase("idle");
     }
-  }, [source, sameLanguage, priced, rows, target, notes]);
+  }, [source, sameLanguage, names, rows, target, notes]);
 
   // Translate automatically as soon as the packs are on the phone.
   useEffect(() => {
@@ -467,10 +484,127 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
 
   const showTranslated = translated && translated.lang === target ? translated : null;
   const showNotes = showTranslated ? showTranslated.notes : notes;
+  const nameAt = (i: number) => menu?.readings.get(i)?.name ?? showTranslated?.labels[i] ?? names[i];
+  const noteAt = (i: number) => menu?.readings.get(i)?.note || null;
+  const canExplain = nano.status === "available" && !!source && source !== "tl" && menuLines.length > 0;
+  const nanoLine = !canExplain
+    ? null
+    : menuBusy
+      ? `✨ Gemini Nano is reading on this phone… ${menu?.readings.size ?? 0} of ${menuLines.length}`
+      : menu
+        ? `✨ Names by Gemini Nano · ${menu.readings.size} of ${menuLines.length} in ${(menu.ms / 1000).toFixed(1)}s on this phone`
+        : null;
+  const local = (amount: number) => (fromCurrency ? formatCurrency(amount, fromCurrency) : formatPeso(Math.round(amount * 100)));
+  const inPesos = (amount: number) => (fromCurrency ? `≈${formatPeso(roundToPeso(convertToPhp(amount, fromCurrency)))}` : "");
+
+  function saveAbroad() {
+    if (!abroad || !fromCurrency) return;
+    const amount = abroad.total ?? abroad.subtotal ?? abroad.check.itemsSum;
+    const id = newId("rc");
+    const merchant = abroad.store ?? "Receipt";
+    update((d) => ({
+      ...d,
+      receipts: [
+        {
+          id,
+          merchant,
+          date: today,
+          items: abroad.items.map((it, i) => ({
+            name: nameAt(i) !== it.name ? `${nameAt(i)} (${it.name})` : it.name,
+            quantity: it.quantity,
+            lineTotalCentavos: convertToPhp(it.total, fromCurrency),
+          })),
+          totalCentavos: convertToPhp(amount, fromCurrency),
+        },
+        ...d.receipts,
+      ],
+      transactions: [
+        {
+          id: newId("tx"),
+          type: "expense",
+          category,
+          description: `${merchant} (${formatCurrency(amount, fromCurrency)})`.slice(0, 80),
+          amountCentavos: convertToPhp(amount, fromCurrency),
+          date: today,
+          source: "receipt",
+          receiptId: id,
+        },
+        ...d.transactions,
+      ],
+    }));
+    setSavedAbroad(true);
+  }
+
+  const itemRow = (key: string, i: number, original: string, right: ReactNode) => (
+    <View key={key} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.surface2, gap: S.sm }}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 15, color: C.text, fontWeight: "700" }}>{nameAt(i)}</Text>
+        {noteAt(i) ? <Text style={{ fontSize: 13, color: C.text, marginTop: 2 }}>{noteAt(i)}</Text> : null}
+        {nameAt(i) !== original ? <Muted>{original}</Muted> : null}
+      </View>
+      <View style={{ alignItems: "flex-end" }}>{right}</View>
+    </View>
+  );
 
   return (
     <View>
-      {receipt?.totalFound ? (
+      {abroad && fromCurrency ? (
+        <Card>
+          <Muted>{abroad.store ? `${abroad.store} · ` : ""}Receipt</Muted>
+          <Text style={{ fontSize: 30, fontWeight: "800", color: C.text, fontVariant: ["tabular-nums"] }}>
+            {local(abroad.total ?? abroad.subtotal ?? 0)} <Text style={{ fontSize: 20, color: C.brandStrong }}>{inPesos(abroad.total ?? abroad.subtotal ?? 0)}</Text>
+          </Text>
+          <Muted>
+            {[abroad.tax !== null ? `includes tax ${local(abroad.tax)}` : null, abroad.payment ? `paid by ${abroad.payment}` : null].filter(Boolean).join(" · ")}
+          </Muted>
+          <View style={{ marginTop: S.sm }}>
+            {abroad.check.status === "ok" ? (
+              <Pill label={`✓ ${abroad.items.length} items add up to the ${abroad.check.against} ${local(abroad.check.printed ?? 0)}`} tone="good" icon="checkmark-circle" />
+            ) : abroad.check.status === "mismatch" ? (
+              <Pill
+                label={`Items add up to ${local(abroad.check.itemsSum)}, the receipt says ${local(abroad.check.printed ?? 0)}. Check the photo.`}
+                tone="warning"
+                icon="warning"
+              />
+            ) : null}
+          </View>
+          {nanoLine ? <Muted style={{ marginTop: S.sm }}>{nanoLine}</Muted> : null}
+          <View style={{ marginTop: S.xs }}>
+            {abroad.items.map((it, i) =>
+              itemRow(
+                `${it.name}-${i}`,
+                i,
+                it.name,
+                <>
+                  <Text style={{ fontSize: 15, color: C.text, fontWeight: "700" }}>{local(it.total)}</Text>
+                  <Muted>{it.quantity !== 1 && it.unit !== null ? `${it.quantity} × ${local(it.unit)}` : inPesos(it.total)}</Muted>
+                  {it.quantity !== 1 && it.unit !== null ? <Muted>{inPesos(it.total)}</Muted> : null}
+                </>,
+              ),
+            )}
+          </View>
+          {savedAbroad ? (
+            <View style={{ marginTop: S.md, gap: S.sm }}>
+              <Pill label={`Saved ${inPesos(abroad.total ?? abroad.subtotal ?? 0)} · your budget is updated`} tone="good" icon="checkmark-circle" />
+              <TripCard compact />
+            </View>
+          ) : (
+            <View style={{ marginTop: S.md }}>
+              <View style={[styles.wrap, { marginBottom: S.sm }]}>
+                {SAVE_CATEGORIES.map((cat) => (
+                  <Chip key={cat} label={EXPENSE_INFO[cat].label} selected={category === cat} onPress={() => setCategory(cat)} />
+                ))}
+              </View>
+              <Button
+                label={`${settings.trip ? "Save to trip budget" : "Save to Gastos"} · ${inPesos(abroad.total ?? abroad.subtotal ?? 0).replace("≈", "")}`}
+                icon="checkmark"
+                onPress={saveAbroad}
+              />
+            </View>
+          )}
+          <Muted style={{ marginTop: S.sm }}>Pesos at {FX.source}; your card or money changer may differ.</Muted>
+        </Card>
+      ) : receipt?.totalFound ? (
         <Card style={{ backgroundColor: C.brandSoft, borderColor: C.brandSoft }}>
           <Muted>Total</Muted>
           <Text style={{ fontSize: 28, fontWeight: "800", color: C.text }}>
@@ -484,49 +618,21 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
         </Card>
       ) : null}
 
-      <Card>
-        <H2>Isalin sa · Translate to</H2>
-        <View style={[styles.wrap, { marginBottom: S.sm }]}>
-          {TARGETS.map((l) => (
-            <Chip
-              key={l.code}
-              label={l.label}
-              selected={target === l.code}
-              onPress={() => {
-                setTarget(l.code);
-                if (l.code !== "tl") setSettings({ targetLang: l.code });
-              }}
-            />
-          ))}
-        </View>
-        <Muted>
-          {source ? `Detected on this phone: ${source === "tl" ? "Filipino / Tagalog" : source.toUpperCase()}. ` : "Detecting language… "}
-          {sameLanguage ? "Already in your language." : phase === "translating" ? "Translating…" : showTranslated ? `Translated on-device in ${(showTranslated.ms / 1000).toFixed(1)}s.` : ""}
-        </Muted>
-        {!sameLanguage && source && !packsReady ? (
-          <View style={{ marginTop: S.sm }}>
-            <Button label={phase === "downloading" ? `Downloading ${targetLabel} pack…` : `Get ${targetLabel} pack (one time, ~30 MB)`} icon="cloud-download" onPress={downloadPacks} busy={phase === "downloading"} />
-          </View>
-        ) : null}
-        {error ? <View style={{ marginTop: S.sm }}><ErrorBox message={error} /></View> : null}
-      </Card>
-
-      {priced.length ? (
+      {!abroad && priced.length ? (
         <Card>
           <H2>Prices</H2>
-          {priced.map((p, i) => (
-            <View key={`${p.label}-${i}`} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.surface2, gap: S.sm }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, color: C.text, fontWeight: "600" }}>{menu?.readings.get(i)?.name ?? showTranslated?.labels[i] ?? p.label}</Text>
-                {menu?.readings.get(i)?.note ? <Text style={{ fontSize: 13, color: C.text, marginTop: 2 }}>{menu.readings.get(i)!.note}</Text> : null}
-                {(menu?.readings.get(i)?.name ?? showTranslated?.labels[i] ?? p.label) !== p.label ? <Muted>{p.label}</Muted> : null}
-              </View>
-              <View style={{ alignItems: "flex-end" }}>
+          {nanoLine ? <Muted style={{ marginBottom: S.xs }}>{nanoLine}</Muted> : null}
+          {priced.map((p, i) =>
+            itemRow(
+              `${p.label}-${i}`,
+              i,
+              p.label,
+              <>
                 <Text style={{ fontSize: 15, color: C.brandStrong, fontWeight: "700" }}>{p.converted}</Text>
                 <Muted>{p.printed}</Muted>
-              </View>
-            </View>
-          ))}
+              </>,
+            ),
+          )}
           {fromCurrency ? (
             <Muted style={{ marginTop: S.sm }}>
               Prices read as {fromCurrency}
@@ -534,8 +640,8 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
             </Muted>
           ) : (
             <View style={[styles.wrap, { marginTop: S.md }]}>
-              {CURRENCIES.map((c) => (
-                <Chip key={c} label={c} selected={settings.currency === c} onPress={() => setSettings({ currency: c })} />
+              {CURRENCIES.map((cur) => (
+                <Chip key={cur} label={cur} selected={settings.currency === cur} onPress={() => setSettings({ currency: cur })} />
               ))}
             </View>
           )}
@@ -543,35 +649,20 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
         </Card>
       ) : null}
 
-      {nano.status === "available" && source && source !== "tl" && menuLines.length ? (
+      {!abroad && !priced.length && canExplain && menu?.readings.size ? (
         <Card>
-          <H2>✨ Ano ang mga ito? · Gemini Nano</H2>
-          {menuBusy && !menu?.readings.size ? (
-            <Muted>Gemini Nano is reading the {priced.length ? "menu" : "sign"} on this phone…</Muted>
-          ) : menu ? (
-            priced.length ? (
-              <Muted>
-                {menuBusy
-                  ? `Reading… ${menu.readings.size} of ${menuLines.length} so far; they appear in the price list above.`
-                  : `${menu.readings.size} of ${menuLines.length} read in ${(menu.ms / 1000).toFixed(1)}s on this phone; names and notes are in the price list above.`}
-              </Muted>
-            ) : (
-              menuLines.map((l, i) =>
-                menu.readings.get(i) ? (
-                  <View key={`${l}-${i}`} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.surface2 }}>
-                    <Text style={{ fontSize: 14, fontWeight: "700", color: C.text }}>{menu.readings.get(i)!.name}</Text>
-                    {menu.readings.get(i)!.note ? <Text style={{ fontSize: 14, color: C.text, marginTop: 2 }}>{menu.readings.get(i)!.note}</Text> : null}
-                    <Muted>{l}</Muted>
-                  </View>
-                ) : null,
-              )
-            )
-          ) : (
-            <Button label={priced.length ? "Explain the dishes" : "Explain this sign"} icon="sparkles" variant="secondary" onPress={readMenu} />
-          )}
-          <Muted style={{ marginTop: S.sm }}>AI reading made on this phone. If you have allergies or avoid pork, ask the staff.</Muted>
+          <H2>✨ Ano ito? · Gemini Nano</H2>
+          {nanoLine ? <Muted style={{ marginBottom: S.xs }}>{nanoLine}</Muted> : null}
+          {menuLines.map((l, i) => (menu.readings.get(i) ? itemRow(`${l}-${i}`, i, l, null) : null))}
         </Card>
       ) : null}
+
+      {canExplain && !menu && !menuBusy ? (
+        <View style={{ marginBottom: S.md }}>
+          <Button label={names.length ? "✨ Explain these items (Gemini Nano)" : "✨ Explain this sign (Gemini Nano)"} variant="secondary" onPress={readMenu} />
+        </View>
+      ) : null}
+      {canExplain && (menu || menuBusy) ? <Muted style={{ marginBottom: S.md }}>AI reading made on this phone. If you have allergies or avoid pork, ask the staff.</Muted> : null}
 
       {showNotes.length ? (
         <View>
@@ -582,12 +673,42 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
         </View>
       ) : null}
 
-      {showTranslated?.text && !menu?.readings.size ? (
-        <Card>
-          <H2>Full translation</H2>
-          <Text style={{ fontSize: 14, color: C.text, lineHeight: 21 }}>{showTranslated.text}</Text>
-        </Card>
-      ) : null}
+      <Card>
+        <Pressable onPress={() => setShowLangs((v) => !v)} accessibilityRole="button" style={[styles.row, { justifyContent: "space-between" }]}>
+          <Text style={{ fontSize: 15, fontWeight: "700", color: C.text }}>Isalin sa · Translate to: {targetLabel}</Text>
+          <Text style={{ color: C.brandStrong, fontWeight: "700" }}>{showLangs ? "Done" : "Change"}</Text>
+        </Pressable>
+        {showLangs ? (
+          <View style={[styles.wrap, { marginTop: S.sm }]}>
+            {TARGETS.map((l) => (
+              <Chip
+                key={l.code}
+                label={l.label}
+                selected={target === l.code}
+                onPress={() => {
+                  setTarget(l.code);
+                  if (l.code !== "tl") setSettings({ targetLang: l.code });
+                }}
+              />
+            ))}
+          </View>
+        ) : null}
+        <Muted style={{ marginTop: S.xs }}>
+          {source ? `Detected on this phone: ${source === "tl" ? "Filipino / Tagalog" : source.toUpperCase()}. ` : "Detecting language… "}
+          {sameLanguage ? "Already in your language." : phase === "translating" ? "Translating…" : showTranslated ? `Translated on-device in ${(showTranslated.ms / 1000).toFixed(1)}s.` : ""}
+        </Muted>
+        {!sameLanguage && source && !packsReady ? (
+          <View style={{ marginTop: S.sm }}>
+            <Button label={phase === "downloading" ? `Downloading ${targetLabel} pack…` : `Get ${targetLabel} pack (one time, ~30 MB)`} icon="cloud-download" onPress={downloadPacks} busy={phase === "downloading"} />
+          </View>
+        ) : null}
+        {error ? (
+          <View style={{ marginTop: S.sm }}>
+            <ErrorBox message={error} />
+          </View>
+        ) : null}
+        {showTranslated?.text && !menu?.readings.size ? <Text style={{ fontSize: 14, color: C.text, lineHeight: 21, marginTop: S.sm }}>{showTranslated.text}</Text> : null}
+      </Card>
 
       <RawText rows={rows} />
     </View>

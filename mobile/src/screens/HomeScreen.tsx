@@ -71,7 +71,9 @@ function QuickActions({ onGo }: { onGo: Go }) {
 }
 
 export function HomeScreen({ onGo }: { onGo: Go }) {
-  const { data, update } = useStore();
+  const { data, update, settings } = useStore();
+  // During a trip the trip card is the main view; monthly home money is folded away so the two "left" numbers don't compete.
+  const [homeOpen, setHomeOpen] = useState(false);
   const [kind, setKind] = useState<PeriodKind>("last30");
   const today = todayISO();
 
@@ -110,10 +112,23 @@ export function HomeScreen({ onGo }: { onGo: Go }) {
   }
 
   const max = summary.byCategory[0]?.centavos ?? 1;
+  const folded = !!settings.trip && !homeOpen;
   return (
     <ScrollView contentContainerStyle={styles.screen}>
       <QuickActions onGo={onGo} />
       <TripCard />
+      {settings.trip ? (
+        <Pressable
+          onPress={() => setHomeOpen((v) => !v)}
+          accessibilityRole="button"
+          style={[styles.row, { justifyContent: "space-between", paddingVertical: S.md, marginBottom: S.sm, borderTopWidth: 1, borderTopColor: C.border }]}
+        >
+          <Text style={{ fontSize: 16, fontWeight: "800", color: C.text }}>🏠 Pera sa bahay · monthly, not the trip</Text>
+          <Text style={{ color: C.brandStrong, fontWeight: "700" }}>{homeOpen ? "Hide" : "Show"}</Text>
+        </Pressable>
+      ) : null}
+      {folded ? null : (
+        <>
       {data.isSample ? (
         <View style={{ marginBottom: S.md }}>
           <Pill label={`Sample data · ${SAMPLE_PERSONA.name}, ${SAMPLE_PERSONA.description.split("·")[0].trim()}`} tone="info" icon="person" />
@@ -177,6 +192,9 @@ export function HomeScreen({ onGo }: { onGo: Go }) {
           ))}
         </Card>
       ) : null}
+
+        </>
+      )}
 
       <ReceiptModal receipt={openReceipt} history={data.receipts} onClose={() => setOpenReceipt(null)} />
     </ScrollView>

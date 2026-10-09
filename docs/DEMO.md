@@ -7,7 +7,7 @@
 - [ ] Phone charged above 60%, **Do Not Disturb on**, brightness high, volume high (the phone speaks).
 - [ ] Privacy → **If the cloud disappears** shows ✓ for all three rows. Offline speech installed for the clerk's language. Gemini Nano: Ready.
 - [ ] Usap: **Ako: Filipino** (or English), **Sila: 日本語** (or English), situation **Hotel**. Hotel saved under "My stay".
-- [ ] Home: a trip budget set (or **Try a sample trip**, Tokyo, day 3 of 5). Check that "Today you can still spend" is green and under ₱900 so the taxi in step 4 tips it over.
+- [ ] Fresh data for the demo: Privacy → delete my data, then Home → **Try a sample trip** (Tokyo, day 3 of 5). Check that "Today you can still spend" is green and under ₱900 so the taxi in step 4 tips it over.
 - [ ] The Japanese test menu (or a real one) in the gallery. A Japanese host message ready to share (a note or a chat message on the phone).
 - [ ] Phone mirrored to the laptop with **scrcpy** over USB (works in airplane mode); laptop on HDMI. Test the projector.
 - [ ] Rehearse the clerk's lines with the room's noise; speak clearly, close to the phone.

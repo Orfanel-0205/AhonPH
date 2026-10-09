@@ -29,9 +29,9 @@ ${lines
   .slice(0, MENU_MAX_LINES)
   .map((l, i) => `${i + 1}. ${l}`)
   .join("\n")}
-For a Filipino traveler, give each line its common English name and at most 10 words on what it is. For food, say if it usually has pork, beef, seafood or alcohol.
+For a Filipino traveler, give each line its common English name. For food and drink, add at most 10 words on what it is and say if it usually has pork, beef, seafood or alcohol. For anything else, write only the English name.
 The camera can confuse similar characters (like 井 and 丼), so guess the intended word. If you really don't know, write: number. not sure
-Format each line exactly as: number. English name | what it is`;
+Format each line exactly as: number. English name | what it is (or just: number. English name)`;
 }
 
 export interface MenuReading {

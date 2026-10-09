@@ -19,6 +19,8 @@ import {
   personalInflation,
   summarize,
   todayISO,
+  tripFacts,
+  tripStatus,
   yearOnYearWindows,
   type CurrencyCode,
   type Insight,
@@ -29,6 +31,7 @@ import { newId, useStore } from "../store";
 import { C, S } from "../theme";
 
 const SUGGESTIONS = ["Saan napupunta ang pera ko?", "Paano ako makakatipid sa susunod na buwan?", "Paano ako maaapektuhan ng inflation?"];
+const TRIP_SUGGESTIONS = ["Kaya ko pa ba ang budget ko sa trip?", "Magkano pa ang pwede kong gastusin ngayon?", "Saan ako pinakamalaki gumastos sa trip?"];
 
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 type History = { role: "user" | "assistant"; content: string }[];
@@ -119,8 +122,11 @@ export function AskScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
     const budgets = budgetStatuses(summary, data.budgets);
     const insights = buildInsights(summary, budgets);
     const { base, current } = yearOnYearWindows(today);
-    return { insights, context: buildAdvisorContext({ today, summary, insights, budgets, inflation: personalInflation(data.receipts, base, current) }) };
-  }, [data, today]);
+    const home = buildAdvisorContext({ today, summary, insights, budgets, inflation: personalInflation(data.receipts, base, current) });
+    // On a trip, the advisor answers from the trip budget first; its numbers are checked against this text too.
+    const trip = settings.trip ? `Current trip budget (computed on this phone):\n${tripFacts(settings.trip, tripStatus(settings.trip, data.transactions, today))}\n\n` : "";
+    return { insights, context: trip + home };
+  }, [data, today, settings.trip]);
 
   const engines: Engine[] = [
     ...(nano.status === "available" ? [PHONE_ENGINE] : []),
@@ -164,7 +170,7 @@ export function AskScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
 
       <TripCard compact />
       <QuickLog engine={engine} onSave={saveRecords} tripCurrency={settings.tripCurrency} meLang={settings.meLang} onTripCurrency={(c) => setSettings({ tripCurrency: c })} />
-      <Advisor key={engine.id} engine={engine} context={context} />
+      <Advisor key={engine.id} engine={engine} context={context} suggestions={settings.trip ? TRIP_SUGGESTIONS : SUGGESTIONS} />
       <HubCard
         hubInfo={hubInfo}
         initialUrl={settings.hubUrl}
@@ -305,7 +311,7 @@ interface Turn {
   streaming?: boolean;
 }
 
-function Advisor({ engine, context }: { engine: Engine; context: string }) {
+function Advisor({ engine, context, suggestions }: { engine: Engine; context: string; suggestions: string[] }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
@@ -338,7 +344,7 @@ function Advisor({ engine, context }: { engine: Engine; context: string }) {
     <Card>
       <H2>Tanong kay Kita</H2>
       <View style={[styles.wrap, { marginBottom: S.sm }]}>
-        {SUGGESTIONS.map((s) => (
+        {suggestions.map((s) => (
           <Chip key={s} label={s} onPress={() => ask(s)} />
         ))}
       </View>

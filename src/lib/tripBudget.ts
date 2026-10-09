@@ -134,7 +134,8 @@ export function tripTips(plan: TripPlan, s: TripStatus): Insight[] {
       }`,
     });
   }
-  if (s.todayLeftCentavos < 0 && s.leftCentavos >= 0 && s.daysLeft > 1) {
+  // The pace tip already gives the per-day amount for the coming days; don't repeat it.
+  if (s.todayLeftCentavos < 0 && s.leftCentavos >= 0 && s.daysLeft > 1 && !out.some((t) => t.id === "trip-pace")) {
     const tomorrow = Math.floor(s.leftCentavos / (s.daysLeft - 1));
     out.push({
       id: "trip-today-over",
