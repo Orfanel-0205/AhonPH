@@ -5,10 +5,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Card, Chip, H2, InsightCard, Muted, Pill, styles } from "./components";
 import { phoneTripTips } from "./nanoEngine";
 import { useLocalAI } from "./localAI";
+import { PlannerModal } from "./Planner";
 import { translateTexts } from "./onDevice";
 import {
   acceptTripTips,
   addDays,
+  CITIES,
+  planTrip,
   convertFromPhp,
   formatCurrency,
   formatTripPeso as formatPeso,
@@ -19,6 +22,7 @@ import {
   tripFacts,
   tripStatus,
   tripTips,
+  type Aspect,
   type CurrencyCode,
   type TripPlan,
 } from "./shared";
@@ -37,6 +41,7 @@ export function TripCard({ compact }: { compact?: boolean }) {
   const { data, settings, setSettings, update } = useStore();
   const ai = useLocalAI();
   const [editing, setEditing] = useState(false);
+  const [planning, setPlanning] = useState(false);
   const [aiTips, setAiTips] = useState<{ tips: string[]; dropped: number; ms: number } | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -84,10 +89,12 @@ export function TripCard({ compact }: { compact?: boolean }) {
           Set a budget for your trip. Everything you scan, say or type is counted right away, in pesos and the local currency, with tips. All on this phone.
         </Muted>
         <View style={{ gap: S.sm }}>
-          <Button label="Set a trip budget" icon="airplane" onPress={() => setEditing(true)} />
+          <Button label="🗺️  Plan a trip · Tipid, Sakto or Bongga" onPress={() => setPlanning(true)} />
+          <Button label="Set a trip budget" icon="airplane" variant="secondary" onPress={() => setEditing(true)} />
           <Button label="Try a sample trip (Tokyo, day 3 of 5)" icon="flask" variant="secondary" onPress={startSample} />
         </View>
         <TripSetup open={editing} plan={null} onClose={() => setEditing(false)} />
+        <PlannerModal open={planning} onClose={() => setPlanning(false)} />
       </Card>
     );
   }
@@ -172,7 +179,27 @@ export function TripCard({ compact }: { compact?: boolean }) {
         </View>
       ) : null}
 
+      {!compact && settings.itinerary
+        ? (() => {
+            // Today's stops from the planned itinerary (recomputed by code from the saved choices).
+            const it = settings.itinerary;
+            const city = CITIES.find((c) => c.id === it.cityId);
+            const today = city && status.phase === "during" ? planTrip(city, it.days, it.tier, it.aspects as Aspect[], it.travelers).days[status.day - 1] : null;
+            return today ? (
+              <View style={{ marginTop: S.sm, padding: S.md, borderRadius: 12, borderWidth: 1, borderColor: C.border }}>
+                <Text style={{ fontSize: 13, fontWeight: "800", color: C.brandStrong }}>🗺️ Today&apos;s plan · {today.area}</Text>
+                <Text style={{ fontSize: 14, color: C.text, marginTop: 2 }}>{today.places.map((p) => p.name).join(" → ") || "Free day"}</Text>
+              </View>
+            ) : null;
+          })()
+        : null}
+      {!compact ? (
+        <Pressable onPress={() => setPlanning(true)} accessibilityRole="button" style={{ marginTop: S.sm }}>
+          <Text style={{ color: C.brandStrong, fontWeight: "700" }}>🗺️ {settings.itinerary ? "Open the itinerary" : "Plan an itinerary"} →</Text>
+        </Pressable>
+      ) : null}
       <TripSetup open={editing} plan={plan} onClose={() => setEditing(false)} />
+      <PlannerModal open={planning} onClose={() => setPlanning(false)} />
     </Card>
   );
 }

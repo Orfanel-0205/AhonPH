@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { AppData, CurrencyCode, TripPlan } from "./shared";
+import type { AppData, CurrencyCode, Tier, TripPlan } from "./shared";
 
 const DATA_KEY = "kitaph:v1";
 const SETTINGS_KEY = "kitaph:settings";
@@ -27,6 +27,8 @@ export interface Settings {
   aiEngine: "auto" | "laptop";
   /** Travel companions for splitting bills; the first is the user ("Ako"). */
   companions: string[];
+  /** The planned itinerary behind the current trip, if the trip came from the planner. */
+  itinerary: { cityId: string; tier: Tier; aspects: string[]; days: number; travelers: number } | null;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -42,6 +44,7 @@ const DEFAULT_SETTINGS: Settings = {
   trip: null,
   aiEngine: "auto",
   companions: ["Ako"],
+  itinerary: null,
 };
 
 interface Store {

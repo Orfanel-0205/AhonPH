@@ -4,7 +4,7 @@
  */
 import { generate } from "./localAI";
 import { OnDevice } from "./onDevice";
-import { acceptPolish, acceptReading, acceptTranslation, acceptTripTips, ADVISOR_SYSTEM_PROMPT, advisorUserMessage, COMPACT_RECEIPT_PROMPT, EXPENSE_CATEGORIES, INCOME_CATEGORIES, menuPrompt, normalizeQuickLog, parseCompactReceipt, parseMenuReading, parseSplit, parseSuggestions, polishPrompt, quickLogSystemPrompt, readPrompt, refineWithLocalKnowledge, splitPrompt, translatePrompt, tripTipPrompt, type MenuReading, type NanoLang, type ParsedRecord, type Scenario } from "./shared";
+import { acceptPolish, acceptReading, acceptTranslation, acceptTripTips, ADVISOR_SYSTEM_PROMPT, advisorUserMessage, COMPACT_RECEIPT_PROMPT, dayTipsPrompt, EXPENSE_CATEGORIES, INCOME_CATEGORIES, menuPrompt, normalizeQuickLog, parseCompactReceipt, parseDayTips, parseMenuReading, parseSplit, parseSuggestions, polishPrompt, quickLogSystemPrompt, readPrompt, refineWithLocalKnowledge, splitPrompt, translatePrompt, tripTipPrompt, type MenuReading, type NanoLang, type ParsedRecord, type Scenario } from "./shared";
 
 export const NANO_LABEL = "Gemini Nano (on-device)";
 
@@ -129,6 +129,17 @@ export async function phonePolish(english: string, scenario: Scenario): Promise<
   } catch {
     return null;
   }
+}
+
+/** One friendly tip per itinerary day. Tips with prices are dropped; prices come from code. */
+export async function phoneDayTips(facts: string, dayPlaces: string[][]): Promise<{ tips: Map<number, string>; ms: number }> {
+  let r: Awaited<ReturnType<typeof generate>>;
+  try {
+    r = await withOneRetry(() => generate(dayTipsPrompt(facts), { temperature: 0.3, maxOutputTokens: MAX_OUTPUT_TOKENS }));
+  } catch (e) {
+    throw friendly(e);
+  }
+  return { tips: parseDayTips(r.text, dayPlaces), ms: r.ms };
 }
 
 /**
