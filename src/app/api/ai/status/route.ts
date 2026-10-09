@@ -1,7 +1,10 @@
 import { connection } from "next/server";
+import { accessFor } from "@/lib/server/guard";
 import { getStatus } from "@/lib/server/ollama";
 
-export async function GET() {
+/** Public and read-only. Also says whether AI requests need the team access key, and if the one sent is right. */
+export async function GET(req: Request) {
   await connection();
-  return Response.json(await getStatus());
+  const access = accessFor(req);
+  return Response.json({ ...(await getStatus()), auth: access === "open" ? "open" : "required", authorized: access === "open" || access === "ok" });
 }

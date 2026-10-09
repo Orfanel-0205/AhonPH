@@ -1,3 +1,4 @@
+import { withGuard } from "@/lib/server/guard";
 import { chat, MODELS } from "@/lib/server/ollama";
 import { badRequest, errorResponse, meta, readJson } from "@/lib/server/respond";
 
@@ -6,7 +7,7 @@ import { badRequest, errorResponse, meta, readJson } from "@/lib/server/respond"
  * The phone sends the same prompt it would give Gemini Nano and applies the same code checks to
  * the answer, so a teammate's phone gets the same features over the laptop's hotspot, with no internet.
  */
-export async function POST(req: Request) {
+async function handle(req: Request): Promise<Response> {
   const body = await readJson(req);
   const prompt = typeof body?.prompt === "string" ? body.prompt : "";
   if (!prompt.trim()) return badRequest("Send a prompt.");
@@ -26,3 +27,6 @@ export async function POST(req: Request) {
     return errorResponse(e);
   }
 }
+
+/** JSON only, team access key, rate limited (docs/API.md). */
+export const POST = withGuard(handle);

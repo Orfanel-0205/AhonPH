@@ -3,8 +3,8 @@
  * kept on disagreement, which is flagged for the user). Usage:
  *   npx tsx scripts/eval-split.mts http://localhost:3000 <dev|holdout>
  */
-import { SPLIT_ALIASES, SPLIT_CASES, SPLIT_HOLDOUT, SPLIT_ITEMS, SPLIT_PEOPLE, scoreSplit } from "../src/lib/evalSplit.ts";
-import { combineSplit, parseSplit, ruleSplit, splitPrompt } from "../src/lib/split.ts";
+import { SPLIT_ALIASES, SPLIT_CASES, SPLIT_HOLDOUT, SPLIT_ITEMS, SPLIT_PEOPLE, scoreSplit } from "../src/lib/evalSplit";
+import { combineSplit, parseSplit, ruleSplit, splitPrompt } from "../src/lib/split";
 
 const hub = process.argv[2] ?? "http://localhost:3000";
 const which = process.argv[3] === "holdout" ? SPLIT_HOLDOUT : SPLIT_CASES;

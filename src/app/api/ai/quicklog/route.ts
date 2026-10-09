@@ -1,9 +1,10 @@
+import { withGuard } from "@/lib/server/guard";
 import { normalizeQuickLog, QUICKLOG_SCHEMA, quickLogSystemPrompt } from "@/lib/ai";
 import { refineWithLocalKnowledge } from "@/lib/basicParse";
 import { chat, MODELS } from "@/lib/server/ollama";
 import { badRequest, clientToday, errorResponse, meta, readJson } from "@/lib/server/respond";
 
-export async function POST(req: Request) {
+async function handle(req: Request): Promise<Response> {
   const body = await readJson(req);
   const text = typeof body?.text === "string" ? body.text.trim() : "";
   if (!text) return badRequest("Type what you spent or received first.");
@@ -33,3 +34,6 @@ export async function POST(req: Request) {
     return errorResponse(e);
   }
 }
+
+/** JSON only, team access key, rate limited (docs/API.md). */
+export const POST = withGuard(handle);

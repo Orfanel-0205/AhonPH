@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState, type ComponentProps } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { setHubKey } from "./src/hub";
 import { refreshHubAI, setNanoReady, setPreferHub } from "./src/localAI";
 import { refreshNano, useNano } from "./src/nanoStore";
 import { onSharedText } from "./src/onDevice";
@@ -52,8 +53,9 @@ function Shell() {
   // The AI router: Gemini Nano when this phone has it, else the team laptop over local Wi-Fi.
   useEffect(() => setNanoReady(nano.status === "available"), [nano.status]);
   useEffect(() => {
+    setHubKey(settings.hubKey);
     refreshHubAI(settings.hubUrl || null);
-  }, [settings.hubUrl]);
+  }, [settings.hubUrl, settings.hubKey]);
   useEffect(() => setPreferHub(settings.aiEngine === "laptop"), [settings.aiEngine]);
 
   useEffect(() => {

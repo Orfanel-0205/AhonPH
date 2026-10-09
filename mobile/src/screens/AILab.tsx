@@ -4,8 +4,8 @@ import { useEffect, useState, type ComponentProps } from "react";
 import { ActivityIndicator, Image, Text, TextInput, View } from "react-native";
 import { Button, Card, Chip, H2, Muted, Pill, styles } from "../components";
 import { phoneQuickLog, phoneRead, phoneReadMenu, phoneSplit, phoneTranslate, phoneTripTips } from "../nanoEngine";
-import { normalizeHubUrl } from "../hub";
-import { refreshHubAI, useHubAI, useLocalAI } from "../localAI";
+import { normalizeHubUrl, setHubKey } from "../hub";
+import { currentHub as useHubAIState, refreshHubAI, useHubAI, useLocalAI } from "../localAI";
 import { useNano } from "../nanoStore";
 import { recognizeText } from "../native";
 import { appNetworkBytes, demoImage, detectLanguage, downloadedLanguages, translateTexts, TRAVELER_LANGUAGES } from "../onDevice";
@@ -382,6 +382,7 @@ export function TeamLaptopAI() {
   const hub = useHubAI();
   const nano = useNano();
   const [address, setAddress] = useState(settings.hubUrl);
+  const [key, setKey] = useState(settings.hubKey);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -390,10 +391,16 @@ export function TeamLaptopAI() {
     if (!url) return;
     setBusy(true);
     setMsg(null);
+    setHubKey(key);
     const ok = await refreshHubAI(url);
     setBusy(false);
-    if (ok) setSettings({ hubUrl: url });
-    else setMsg("Can't reach the laptop. Join its hotspot (or the same Wi-Fi), start the hub, and check the address it shows.");
+    if (ok) setSettings({ hubUrl: url, hubKey: key.trim() });
+    else
+      setMsg(
+        useHubAIState().needsKey
+          ? "The laptop hub needs the team access key (401). Type the key set on the laptop (LAKBAYMATE_HUB_KEY)."
+          : "Can't reach the laptop. Join its hotspot (or the same Wi-Fi), start the hub, and check the address it shows.",
+      );
   }
 
   return (
@@ -422,6 +429,15 @@ export function TeamLaptopAI() {
           <Button label="Connect" icon="link" variant="secondary" onPress={connect} busy={busy} />
         </View>
       </View>
+      <TextInput
+        value={key}
+        onChangeText={setKey}
+        placeholder="Team access key (if the hub asks for one)"
+        autoCapitalize="none"
+        secureTextEntry
+        style={[styles.input, { marginTop: S.sm }]}
+        accessibilityLabel="Team access key"
+      />
       {msg ? <Text style={{ fontSize: 13, color: C.danger, marginTop: 4 }}>{msg}</Text> : null}
       <Text style={{ fontSize: 14, fontWeight: "700", color: C.text, marginTop: S.md, marginBottom: S.xs }}>Which AI answers</Text>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: S.sm }}>

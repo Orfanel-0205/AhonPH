@@ -130,7 +130,7 @@ Caveats: we wrote all sentences ourselves; the "pinadala" family rule in `src/li
 
 Japanese quality was judged by our team, not formally evaluated. The hand-written Japanese, Korean and Chinese phrases are in `src/lib/talk.ts` for anyone to check.
 
-**Other checks.** Receipt vision with Qwen3-VL 2B on the hub read 1 synthetic receipt exactly (one generated image only). The on-device receipt reader is unit-tested on hand-built OCR layouts and one real phone OCR fixture; accuracy on real receipts has not been measured. Unit tests: `npm test` (155) and `cd cloud && pytest` (5).
+**Other checks.** Receipt vision with Qwen3-VL 2B on the hub read 1 synthetic receipt exactly (one generated image only). The on-device receipt reader is unit-tested on hand-built OCR layouts and one real phone OCR fixture; accuracy on real receipts has not been measured. Unit tests: `npm test` (163) and `cd cloud && pytest` (5).
 
 ## Running it
 
@@ -160,6 +160,8 @@ npm run build && npx next start -H 0.0.0.0 -p 3000
 ```
 
 Open http://localhost:3000 for model status and the address to type into the phone. Allow Node.js through the firewall on private networks.
+
+**Team access key (recommended on a shared hotspot).** Put `LAKBAYMATE_HUB_KEY=<team key>` in `.env.local` and restart the hub; phones then type the key under **Team laptop AI**. The hub also rate-limits each phone (bursts of 20, then 30 a minute). Details, examples and status codes: [docs/API.md](docs/API.md). How the project is engineered: [docs/ENGINEERING.md](docs/ENGINEERING.md).
 
 **Team laptop AI.** Turn on the laptop's mobile hotspot (no internet needed) and have teammates join it. In the app: **AI Lab → Team laptop AI**, type the address the hub page shows (for a Windows hotspot usually `192.168.137.1:3000`), tap **Connect**. With **Auto**, phones with Gemini Nano keep using it and others use the laptop; **Team laptop** makes every phone use the laptop's model.
 

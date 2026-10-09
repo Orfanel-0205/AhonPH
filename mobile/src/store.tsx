@@ -25,6 +25,8 @@ export interface Settings {
   trip: TripPlan | null;
   /** "auto": Gemini Nano on this phone, else the team laptop. "laptop": always the team laptop. */
   aiEngine: "auto" | "laptop";
+  /** Team access key for the laptop hub, if the hub requires one. */
+  hubKey: string;
   /** Travel companions for splitting bills; the first is the user ("Ako"). */
   companions: string[];
   /** The planned itinerary behind the current trip, if the trip came from the planner. */
@@ -43,6 +45,7 @@ const DEFAULT_SETTINGS: Settings = {
   stayAddress: "",
   trip: null,
   aiEngine: "auto",
+  hubKey: "",
   companions: ["Ako"],
   itinerary: null,
 };

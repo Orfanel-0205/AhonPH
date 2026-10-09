@@ -1,3 +1,4 @@
+import { withGuard } from "@/lib/server/guard";
 import { ADVISOR_SYSTEM_PROMPT, advisorUserMessage } from "@/lib/ai";
 import { chatStream, MODELS, type ChatMessage } from "@/lib/server/ollama";
 import { badRequest, errorResponse, meta, readJson } from "@/lib/server/respond";
@@ -7,7 +8,7 @@ interface Turn {
   content: string;
 }
 
-export async function POST(req: Request) {
+async function handle(req: Request): Promise<Response> {
   const body = await readJson(req);
   const question = typeof body?.question === "string" ? body.question.trim() : "";
   const context = typeof body?.context === "string" ? body.context : "";
@@ -45,3 +46,6 @@ export async function POST(req: Request) {
     return errorResponse(e);
   }
 }
+
+/** JSON only, team access key, rate limited (docs/API.md). */
+export const POST = withGuard(handle);

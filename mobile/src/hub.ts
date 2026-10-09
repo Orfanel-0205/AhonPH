@@ -2,13 +2,25 @@
  * Client for the optional LakbayMate Hub: the user's own laptop running Ollama, reached over local Wi-Fi.
  * No internet is involved; the phone talks to an address like http://192.168.1.20:3000.
  */
-import type { ParsedRecord } from "./shared";
+import { hubErrorMessage, retryAfterSeconds, type ParsedRecord } from "./shared";
+
+let hubKey = "";
+/** The team access key, sent as "Authorization: Bearer <key>" when the hub requires one. */
+export function setHubKey(key: string) {
+  hubKey = key.trim();
+}
+export function authHeaders(): Record<string, string> {
+  return hubKey ? { Authorization: `Bearer ${hubKey}` } : {};
+}
 
 export interface HubStatus {
   reachable: boolean;
   endpoint: string;
   text: { name: string; loaded: boolean; processor: string };
   vision: { name: string; loaded: boolean; processor: string };
+  /** "required" when AI requests need the team access key; `authorized` says if ours is right. */
+  auth?: "open" | "required";
+  authorized?: boolean;
 }
 
 async function withTimeout(url: string, init: RequestInit, ms: number): Promise<Response> {
@@ -30,7 +42,7 @@ export function normalizeHubUrl(raw: string): string {
 
 export async function hubStatus(base: string): Promise<HubStatus | null> {
   try {
-    const res = await withTimeout(`${base}/api/ai/status`, {}, 4000);
+    const res = await withTimeout(`${base}/api/ai/status`, { headers: authHeaders() }, 4000);
     return res.ok ? ((await res.json()) as HubStatus) : null;
   } catch {
     return null;
@@ -39,14 +51,16 @@ export async function hubStatus(base: string): Promise<HubStatus | null> {
 
 async function postJson<T>(url: string, body: unknown, ms: number): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
   try {
-    const res = await withTimeout(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }, ms);
+    const res = await withTimeout(url, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(body) }, ms);
     const text = await res.text();
     if (!res.ok) {
+      let server: string | undefined;
       try {
-        return { ok: false, error: (JSON.parse(text) as { error?: string }).error ?? `Hub error ${res.status}` };
+        server = (JSON.parse(text) as { error?: string }).error;
       } catch {
-        return { ok: false, error: `Hub error ${res.status}` };
+        server = undefined;
       }
+      return { ok: false, error: hubErrorMessage(res.status, server, retryAfterSeconds(res.headers.get("retry-after"))) };
     }
     return { ok: true, data: (url.endsWith("/advise") ? text : JSON.parse(text)) as T };
   } catch {

@@ -29,6 +29,14 @@ describe("trip planner", () => {
     expect(planTrip(tokyo, 3, 1, ["food"], 2).totals.hotel).toBe(8000);
   });
 
+  it("plans a one-day trip (layover or day trip) with no hotel", () => {
+    const p = planTrip(CITIES.find((c) => c.id === "singapore")!, 1, 1, ["food", "culture"]);
+    expect(p.days).toHaveLength(1);
+    expect(p.days[0].places.length).toBeGreaterThan(0);
+    expect(p.totals.hotel).toBe(0);
+    expect(p.totals.all).toBe(p.totals.pocket);
+  });
+
   it("costs more as the tier goes up", () => {
     const [a, b, c] = ([1, 2, 3] as const).map((t) => planTrip(tokyo, 4, t, ["food", "culture"]).totals.all);
     expect(a).toBeLessThan(b);

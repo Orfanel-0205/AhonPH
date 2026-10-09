@@ -44,6 +44,7 @@ export {
 } from "../../src/lib/talk";
 export { applyCurrency, type ForeignRecord } from "../../src/lib/tripMoney";
 export { convertToPhp, detectCurrency, formatCurrency } from "../../src/lib/rates";
+export { hubErrorMessage, retryAfterSeconds } from "../../src/lib/apiErrors";
 export { combineSplit, parseSplit, ruleSplit, splitBill, splitPrompt, type SplitSource } from "../../src/lib/split";
 export { containsNote, lookupDish, type Dish } from "../../src/lib/dishes";
 export { ASPECTS, CITIES, dayTipsPrompt, parseDayTips, planFacts, planTrip, TIERS, type Aspect, type City, type Tier, type TripPlanResult } from "../../src/lib/itinerary";

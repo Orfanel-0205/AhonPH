@@ -4,7 +4,8 @@
  * same prompt either way and applies the same code checks to the answer.
  */
 import { useSyncExternalStore } from "react";
-import { hubStatus } from "./hub";
+import { authHeaders, hubStatus } from "./hub";
+import { hubErrorMessage, retryAfterSeconds } from "./shared";
 import { useNano } from "./nanoStore";
 import { nanoGenerate, OnDevice } from "./onDevice";
 
@@ -12,11 +13,13 @@ interface HubAI {
   url: string | null;
   reachable: boolean;
   model: string | null;
+  /** The hub needs the team access key and ours is missing or wrong. */
+  needsKey: boolean;
   /** Use the laptop even when this phone has Gemini Nano (to compare, or to share one model in a team). */
   prefer: boolean;
 }
 
-let hub: HubAI = { url: null, reachable: false, model: null, prefer: false };
+let hub: HubAI = { url: null, reachable: false, model: null, needsKey: false, prefer: false };
 const listeners = new Set<() => void>();
 const set = (patch: Partial<HubAI>) => {
   hub = { ...hub, ...patch };
@@ -29,6 +32,10 @@ const subscribe = (l: () => void) => {
   };
 };
 
+export function currentHub(): HubAI {
+  return hub;
+}
+
 export function useHubAI(): HubAI {
   return useSyncExternalStore(subscribe, () => hub);
 }
@@ -36,12 +43,14 @@ export function useHubAI(): HubAI {
 /** Checks the laptop hub; call when the app starts and whenever the hub address changes. */
 export async function refreshHubAI(url: string | null): Promise<boolean> {
   if (!url) {
-    set({ url: null, reachable: false, model: null });
+    set({ url: null, reachable: false, model: null, needsKey: false });
     return false;
   }
   const s = await hubStatus(url);
-  set({ url, reachable: !!s?.reachable, model: s?.text.name ?? null });
-  return !!s?.reachable;
+  // Usable only if Ollama is up and our access key (if the hub wants one) is right.
+  const needsKey = s?.authorized === false;
+  set({ url, reachable: !!s?.reachable && !needsKey, model: s?.text.name ?? null, needsKey });
+  return !!s?.reachable && !needsKey;
 }
 
 export function setPreferHub(prefer: boolean) {
@@ -109,15 +118,23 @@ export async function generate(
   const started = Date.now();
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 90_000);
-  try {
-    const res = await fetch(`${hub.url}/api/ai/generate`, {
+  const call = () =>
+    fetch(`${hub.url}/api/ai/generate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ prompt, temperature: opts.temperature, maxTokens: opts.maxOutputTokens }),
       signal: ctrl.signal,
     });
-    const data = (await res.json()) as { text?: string; error?: string };
-    if (!res.ok || typeof data.text !== "string") throw new Error(data.error ?? `Laptop AI error ${res.status}`);
+  try {
+    let res = await call();
+    // 429: the laptop is shared by the team. Wait as long as it asks (up to 10 s) and try once more.
+    const wait = res.status === 429 ? retryAfterSeconds(res.headers.get("retry-after")) : undefined;
+    if (wait !== undefined && wait <= 10) {
+      await new Promise((r) => setTimeout(r, wait * 1000));
+      res = await call();
+    }
+    const data = (await res.json().catch(() => ({}))) as { text?: string; error?: string };
+    if (!res.ok || typeof data.text !== "string") throw new Error(hubErrorMessage(res.status, data.error, retryAfterSeconds(res.headers.get("retry-after"))));
     opts.onText?.(data.text);
     const ms = Date.now() - started;
     return { text: data.text, ms, firstTokenMs: ms };

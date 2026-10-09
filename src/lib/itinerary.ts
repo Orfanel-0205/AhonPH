@@ -223,7 +223,8 @@ export function planTrip(city: City, days: number, tier: Tier, aspects: Aspect[]
   const food = city.food[t] * n;
   const transport = city.transport[t] * n;
   const rooms = Math.ceil(Math.max(1, travelers) / 2);
-  const hotel = Math.round((city.hotel[t] * Math.max(1, n - 1) * rooms) / Math.max(1, travelers));
+  // A one-day trip (a layover or day trip) needs no hotel; otherwise nights = days - 1.
+  const hotel = Math.round((city.hotel[t] * (n - 1) * rooms) / Math.max(1, travelers));
   const pocket = activities + food + transport;
   return { city, tier, days: out, totals: { activities, food, transport, pocket, hotel, all: pocket + hotel } };
 }

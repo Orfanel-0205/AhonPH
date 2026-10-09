@@ -1,10 +1,11 @@
+import { withGuard } from "@/lib/server/guard";
 import { normalizeReceipt, RECEIPT_PROMPT, RECEIPT_SCHEMA } from "@/lib/ai";
 import { chat, MODELS } from "@/lib/server/ollama";
 import { badRequest, clientToday, errorResponse, meta, readJson } from "@/lib/server/respond";
 
 const MAX_BASE64_CHARS = 8_000_000;
 
-export async function POST(req: Request) {
+async function handle(req: Request): Promise<Response> {
   const body = await readJson(req);
   const image = typeof body?.image === "string" ? body.image.replace(/^data:image\/[a-z+]+;base64,/, "") : "";
   if (!image) return badRequest("Choose a photo of a receipt first.");
@@ -32,3 +33,6 @@ export async function POST(req: Request) {
     return errorResponse(e);
   }
 }
+
+/** JSON only, team access key, rate limited (docs/API.md). */
+export const POST = withGuard(handle, { maxBytes: 9_000_000 });

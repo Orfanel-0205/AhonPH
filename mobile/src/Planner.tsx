@@ -157,7 +157,7 @@ export function PlannerModal({ open, onClose }: { open: boolean; onClose: () => 
                   <Text style={{ fontSize: 15, fontWeight: "800", color: C.text }}>{t.label}</Text>
                   <Text style={{ fontSize: 12, color: C.muted }}>{t.sub}</Text>
                   <Text style={{ fontSize: 18, fontWeight: "800", color: C.brandStrong, marginTop: 6 }}>{pesos(p.totals.all)}</Text>
-                  <Text style={{ fontSize: 11, color: C.muted }}>with hotel</Text>
+                  <Text style={{ fontSize: 11, color: C.muted }}>{days === 1 ? "day trip" : "with hotel"}</Text>
                 </Pressable>
               );
             })}
@@ -199,8 +199,9 @@ export function PlannerModal({ open, onClose }: { open: boolean; onClose: () => 
                 Pocket money {pesos(plan.totals.pocket)} <Text style={{ fontSize: 13, color: C.muted }}>({local(plan.totals.pocket)}) per person</Text>
               </Text>
               <Text style={{ fontSize: 14, color: C.text }}>
-                Hotel about {pesos(plan.totals.hotel)} per person ({Math.ceil(travelers / 2)} room{Math.ceil(travelers / 2) === 1 ? "" : "s"}, {Math.max(1, days - 1)} night
-                {Math.max(1, days - 1) === 1 ? "" : "s"})
+                {days === 1
+                  ? "Day trip or layover: no hotel."
+                  : `Hotel about ${pesos(plan.totals.hotel)} per person (${Math.ceil(travelers / 2)} room${Math.ceil(travelers / 2) === 1 ? "" : "s"}, ${days - 1} night${days - 1 === 1 ? "" : "s"})`}
               </Text>
               <Muted>Estimates for 2026 computed by code from bundled prices; flights not included. Check prices before you go.</Muted>
             </View>
