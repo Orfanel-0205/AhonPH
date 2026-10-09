@@ -80,7 +80,9 @@ export function buildInsights(s: Summary, budgets: BudgetStatus[]): Insight[] {
     });
   }
 
-  if (monthly) {
+  // Without recorded income the period is usually a partial picture (e.g. one scanned receipt),
+  // so projecting it as monthly spending would mislead.
+  if (monthly && s.incomeCentavos > 0) {
     const impacts = s.byCategory
       .filter((c) => CATEGORY_INFLATION[c.category])
       .map((c) => {

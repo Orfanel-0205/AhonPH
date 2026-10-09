@@ -120,7 +120,10 @@ describe("insights edge cases", () => {
   it("handles no income without dividing by zero", () => {
     const s = summarize([tx({ type: "expense", category: "food", amountCentavos: 10_000, date: "2026-10-01" })], p);
     expect(s.spentShareOfIncome).toBeNull();
-    expect(buildInsights(s, []).map((i) => i.id)).toContain("no-income");
+    const ids = buildInsights(s, []).map((i) => i.id);
+    expect(ids).toContain("no-income");
+    // One scanned receipt is not a month of food spending (seen on the phone during testing).
+    expect(ids).not.toContain("inflation-food");
   });
   it("handles an empty ledger", () => {
     expect(buildInsights(summarize([], p), [])[0].id).toBe("empty");
