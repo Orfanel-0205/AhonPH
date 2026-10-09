@@ -1,0 +1,19 @@
+// Single import point for the shared, unit-tested logic in ../src/lib (also used by the web hub).
+export type { AppData, Budgets, CategoryId, Centavos, ExpenseCategory, Receipt, ReceiptItem, Transaction, TxType } from "../../src/lib/types";
+export { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "../../src/lib/types";
+export { EXPENSE_INFO, INCOME_INFO, categoryLabel } from "../../src/lib/categories";
+export { addDays, formatDate, todayISO } from "../../src/lib/dates";
+export { formatPct, formatPeso, toCentavos } from "../../src/lib/money";
+export { budgetStatuses, makePeriod, summarize, type PeriodKind, type Summary } from "../../src/lib/finance";
+export { buildInsights, type Insight, type Severity } from "../../src/lib/insights";
+export { personalInflation, yearOnYearWindows, type PersonalInflation } from "../../src/lib/inflation";
+export { buildSampleData, SAMPLE_PERSONA } from "../../src/lib/sample";
+export { buildAdvisorContext } from "../../src/lib/advisorContext";
+export { findUngroundedNumbers } from "../../src/lib/numbers";
+export { checkReceipt, type ReceiptCheck } from "../../src/lib/receipt";
+export { parseOcrReceipt, type OcrLine, type ScannedReceipt } from "../../src/lib/ocrReceipt";
+export { breakdownReceipt, receiptTips, type GroupTotal } from "../../src/lib/receiptInsights";
+export { findPricedLines, explainCharges, type ChargeNote, type PricedLine } from "../../src/lib/traveler";
+export { FX, convertFromPhp, formatForeign, type CurrencyCode } from "../../src/lib/rates";
+export { ECON_FACTS } from "../../src/lib/econ";
+export type { ParsedRecord } from "../../src/lib/ai";
