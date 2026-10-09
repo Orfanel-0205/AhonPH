@@ -25,6 +25,8 @@ export interface Settings {
   trip: TripPlan | null;
   /** "auto": Gemini Nano on this phone, else the team laptop. "laptop": always the team laptop. */
   aiEngine: "auto" | "laptop";
+  /** Travel companions for splitting bills; the first is the user ("Ako"). */
+  companions: string[];
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -39,6 +41,7 @@ const DEFAULT_SETTINGS: Settings = {
   stayAddress: "",
   trip: null,
   aiEngine: "auto",
+  companions: ["Ako"],
 };
 
 interface Store {

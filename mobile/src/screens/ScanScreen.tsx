@@ -42,6 +42,7 @@ import {
   type ReceiptItem,
   type ScannedReceipt,
 } from "../shared";
+import { SplitModal } from "../SplitBill";
 import { TripCard } from "../TripBudget";
 import { newId, useStore } from "../store";
 import { C, S } from "../theme";
@@ -383,6 +384,7 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
   const names = useMemo(() => (abroad ? abroad.items.map((i) => i.name) : priced.map((p) => p.label)), [abroad, priced]);
   const [category, setCategory] = useState<ExpenseCategory>("food");
   const [savedAbroad, setSavedAbroad] = useState(false);
+  const [splitOpen, setSplitOpen] = useState(false);
   const [showLangs, setShowLangs] = useState(false);
   const [target, setTarget] = useState<string>(settings.targetLang);
   const targetLabel = TARGETS.find((l) => l.code === target)?.label ?? target;
@@ -612,7 +614,18 @@ function TravelerResult({ ocr }: { ocr: OcrResult }) {
               />
             </View>
           )}
+          <View style={{ marginTop: S.sm }}>
+            <Button label="👥  Hatian · split with your group" variant="secondary" onPress={() => setSplitOpen(true)} />
+          </View>
           <Muted style={{ marginTop: S.sm }}>Pesos at {FX.source}; your card or money changer may differ.</Muted>
+          <SplitModal
+            open={splitOpen}
+            onClose={() => setSplitOpen(false)}
+            items={abroad.items.map((it, i) => ({ name: nameAt(i), original: it.name, total: it.total }))}
+            total={abroad.total ?? abroad.subtotal ?? abroad.check.itemsSum}
+            currency={fromCurrency}
+            store={abroad.store}
+          />
         </Card>
       ) : receipt?.totalFound ? (
         <Card style={{ backgroundColor: C.brandSoft, borderColor: C.brandSoft }}>

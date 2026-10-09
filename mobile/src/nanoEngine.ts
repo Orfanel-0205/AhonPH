@@ -4,7 +4,7 @@
  */
 import { generate } from "./localAI";
 import { OnDevice } from "./onDevice";
-import { acceptPolish, acceptReading, acceptTranslation, acceptTripTips, ADVISOR_SYSTEM_PROMPT, advisorUserMessage, COMPACT_RECEIPT_PROMPT, EXPENSE_CATEGORIES, INCOME_CATEGORIES, menuPrompt, normalizeQuickLog, parseCompactReceipt, parseMenuReading, parseSuggestions, polishPrompt, quickLogSystemPrompt, readPrompt, refineWithLocalKnowledge, translatePrompt, tripTipPrompt, type MenuReading, type NanoLang, type ParsedRecord, type Scenario } from "./shared";
+import { acceptPolish, acceptReading, acceptTranslation, acceptTripTips, ADVISOR_SYSTEM_PROMPT, advisorUserMessage, COMPACT_RECEIPT_PROMPT, EXPENSE_CATEGORIES, INCOME_CATEGORIES, menuPrompt, normalizeQuickLog, parseCompactReceipt, parseMenuReading, parseSplit, parseSuggestions, polishPrompt, quickLogSystemPrompt, readPrompt, refineWithLocalKnowledge, splitPrompt, translatePrompt, tripTipPrompt, type MenuReading, type NanoLang, type ParsedRecord, type Scenario } from "./shared";
 
 export const NANO_LABEL = "Gemini Nano (on-device)";
 
@@ -129,6 +129,20 @@ export async function phonePolish(english: string, scenario: Scenario): Promise<
   } catch {
     return null;
   }
+}
+
+/**
+ * Hatian: the local AI reads who had what ("kay Maria ang karaage, hati kami sa edamame") and assigns
+ * receipt items to people. Only names on the list are accepted; the amounts are computed by code.
+ */
+export async function phoneSplit(items: string[], people: string[], said: string): Promise<{ shares: number[][]; assigned: number; ms: number }> {
+  let r: Awaited<ReturnType<typeof generate>>;
+  try {
+    r = await withOneRetry(() => generate(splitPrompt(items, people, said), { temperature: 0, maxOutputTokens: 160 }));
+  } catch (e) {
+    throw friendly(e);
+  }
+  return { ...parseSplit(r.text, items.length, people), ms: r.ms };
 }
 
 /**

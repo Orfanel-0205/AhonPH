@@ -3,13 +3,13 @@ import { useNetworkState } from "expo-network";
 import { useEffect, useState, type ComponentProps } from "react";
 import { ActivityIndicator, Image, Text, TextInput, View } from "react-native";
 import { Button, Card, Chip, H2, Muted, Pill, styles } from "../components";
-import { phoneQuickLog, phoneRead, phoneReadMenu, phoneTranslate, phoneTripTips } from "../nanoEngine";
+import { phoneQuickLog, phoneRead, phoneReadMenu, phoneSplit, phoneTranslate, phoneTripTips } from "../nanoEngine";
 import { normalizeHubUrl } from "../hub";
 import { refreshHubAI, useHubAI, useLocalAI } from "../localAI";
 import { useNano } from "../nanoStore";
 import { recognizeText } from "../native";
 import { appNetworkBytes, demoImage, detectLanguage, downloadedLanguages, translateTexts, TRAVELER_LANGUAGES } from "../onDevice";
-import { applyCurrency, convertToPhp, formatCurrency, formatPeso, linesToRows, parseForeignReceipt, roundToPeso, sampleTrip, todayISO, tripFacts, tripStatus } from "../shared";
+import { applyCurrency, convertToPhp, formatCurrency, splitBill, formatPeso, linesToRows, parseForeignReceipt, roundToPeso, sampleTrip, todayISO, tripFacts, tripStatus } from "../shared";
 import { listen, offlineSpeechLanguages, speak, THEM_LANGS } from "../speech";
 import { useStore } from "../store";
 import { C, S } from "../theme";
@@ -20,7 +20,7 @@ const STAFF_LINE = "お会計はレジでお願いします。カードも使え
 const MY_LINE = "Can I pay by card?";
 const SPENDING = "taxi 2300 yen, ramen 980";
 
-type StepId = "ocr" | "parse" | "names" | "lang" | "translate" | "say" | "log" | "tip" | "voice";
+type StepId = "ocr" | "parse" | "names" | "lang" | "translate" | "say" | "log" | "split" | "tip" | "voice";
 type Status = "waiting" | "running" | "done" | "skipped" | "failed";
 interface StepView {
   status: Status;
@@ -37,6 +37,7 @@ const STEPS: { id: StepId; title: string; engine: string }[] = [
   { id: "translate", title: "Understand what staff said", engine: "ML Kit Translation, then {AI}" },
   { id: "say", title: "Answer like a local", engine: "{AI} + code check + back-translation" },
   { id: "log", title: "Understand spending, no receipt", engine: "{AI} + code check" },
+  { id: "split", title: "Split the bill from one sentence", engine: "{AI} assigns · code computes" },
   { id: "tip", title: "Budget tip with checked numbers", engine: "{AI} + code check" },
   { id: "voice", title: "Say the answer out loud", engine: "Android text-to-speech · offline voice" },
 ];
@@ -102,6 +103,9 @@ export function OfflineAIDemo() {
     let rows: string[] = [];
     let itemNames: string[] = [];
     let jaAnswer = "";
+    let itemTotals: number[] = [];
+    let receiptTotal = 0;
+    let english: Map<number, { name: string; note: string }> = new Map();
 
     if (
       await step("ocr", async () => {
@@ -118,7 +122,9 @@ export function OfflineAIDemo() {
         const r = parseForeignReceipt(rows, { wholeNumbers: true });
         if (!r) throw new Error("No receipt found in the text.");
         itemNames = r.items.map((i) => i.name);
+        itemTotals = r.items.map((i) => i.total);
         const total = r.total ?? r.subtotal ?? 0;
+        receiptTotal = total;
         return {
           lines: [
             `${r.items.length} items: ${r.items.map((i) => `${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ""}`).join(", ")}`,
@@ -142,6 +148,7 @@ export function OfflineAIDemo() {
         if (!itemNames.length) throw new Error("No items to name.");
         const show = (m: Map<number, { name: string; note: string }>) => itemNames.flatMap((n, i) => (m.get(i) ? [`${n} → ${m.get(i)!.name}`] : []));
         const r = await phoneReadMenu(itemNames, "ja", (m) => update(show(m)));
+        english = r.readings;
         return { lines: show(r.readings), note: `${r.readings.size} of ${itemNames.length} named; hedged or echoed answers are dropped by code.` };
       })
     )
@@ -207,6 +214,29 @@ export function OfflineAIDemo() {
 
     await sleep(600);
     if (
+      await step("split", async () => {
+        if (!hasNano) return noNano;
+        if (!itemNames.length) throw new Error("No receipt items to split.");
+        const people = ["Ako", "Maria", "Jun"];
+        const said = "Kay Maria ang karaage, kay Jun ang yakitori, hati kaming lahat sa beer at edamame, akin ang oyakodon.";
+        const labels = itemNames.map((n, i) => (english.get(i) ? `${n} (${english.get(i)!.name})` : n));
+        const r = await phoneSplit(labels, people, said);
+        const split = splitBill(itemTotals, r.shares, people.length, receiptTotal, 0);
+        return {
+          lines: [
+            `“${said}”`,
+            // Who got what, so anyone watching can check the AI's assignment, then what each person pays.
+            ...itemNames.map((n, i) => `${english.get(i)?.name ?? n} → ${r.shares[i]?.length ? r.shares[i].map((k) => people[k]).join(", ") : "everyone"}`),
+            ...people.map((p, i) => `${p} pays ${formatCurrency(split.amounts[i], "JPY")} ≈ ${formatPeso(roundToPeso(convertToPhp(split.amounts[i], "JPY")))}`),
+          ],
+          note: `${r.assigned} of ${itemNames.length} items assigned; only names on the list are accepted. ✓ Shares add up to ${formatCurrency(receiptTotal, "JPY")} exactly, computed by code.`,
+        };
+      })
+    )
+      ok++;
+
+    await sleep(600);
+    if (
       await step("tip", async () => {
         if (!hasNano) return noNano;
         const sample = sampleTrip(todayISO());
@@ -249,7 +279,7 @@ export function OfflineAIDemo() {
         icon={offline ? "airplane" : "wifi"}
       />
       <Muted style={{ marginTop: S.sm }}>
-        Nine AI steps on a sample receipt and a short conversation: reading, checking, translating, writing, speaking. Timings are measured on this phone as they run.
+        Ten AI steps on a sample receipt and a short conversation: reading, checking, translating, writing, speaking. Timings are measured on this phone as they run.
       </Muted>
       <View style={{ marginTop: S.md }}>
         <Button label={running ? "Running on this phone…" : summary ? "Run again" : "▶  Run the offline AI demo"} icon="flash" onPress={run} busy={running} />
