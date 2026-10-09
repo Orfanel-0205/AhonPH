@@ -1,3 +1,5 @@
+import { lookupDish } from "./dishes";
+
 /**
  * Who-had-what sentences for measuring the bill-split readers. Written by us on Oct 10, 2026 (about
  * 4 AM), after the rule reader existed: a development set, not a held-out test. Several are hard on
@@ -7,13 +9,11 @@
  * means everyone shares the item.
  */
 export const SPLIT_ITEMS = ["生ビール (Draft beer)", "枝豆 (Edamame)", "焼き鳥盛り合わせ (Assorted yakitori)", "唐揚げ (Karaage)", "親子丼 (Oyakodon)"];
-export const SPLIT_ALIASES = [
-  ["生ビール", "Draft beer", "beer"],
-  ["枝豆", "Edamame", "edamame", "soybeans"],
-  ["焼き鳥盛り合わせ", "Assorted yakitori", "yakitori", "skewers"],
-  ["唐揚げ", "Karaage", "karaage", "fried chicken"],
-  ["親子丼", "Oyakodon", "oyakodon", "chicken and egg"],
-];
+/** Built the way the app builds them: the printed name plus the hand-checked dish's English name and spoken words. */
+export const SPLIT_ALIASES = ["生ビール", "枝豆", "焼き鳥盛り合わせ", "唐揚げ", "親子丼"].map((n) => {
+  const d = lookupDish(n);
+  return [n, ...(d ? [d.en, ...d.say] : [])];
+});
 export const SPLIT_PEOPLE = ["Ako", "Maria", "Jun"];
 
 export interface SplitCase {

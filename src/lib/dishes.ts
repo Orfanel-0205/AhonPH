@@ -19,8 +19,8 @@ export interface Dish {
 
 export const DISHES: Dish[] = [
   // ---------- Japan ----------
-  { names: ["ノンアルコールビール", "ノンアルビール"], en: "Non-alcoholic beer", note: "Beer-taste drink without alcohol.", contains: [], say: ["non-alcoholic beer"] },
-  { names: ["生ビール", "ビール", "生ビ"], en: "Draft beer", note: "Beer on tap.", contains: ["alcohol"], say: ["beer", "nama", "biiru"] },
+  { names: ["ノンアルコールビール", "ノンアルビール"], en: "Non-alcoholic beer", note: "Beer-taste drink without alcohol.", contains: [], say: ["drinks", "inumin", "non-alcoholic beer"] },
+  { names: ["生ビール", "ビール", "生ビ"], en: "Draft beer", note: "Beer on tap.", contains: ["alcohol"], say: ["drinks", "inumin", "beer", "nama", "biiru"] },
   { names: ["焼きそば", "焼そば"], en: "Yakisoba", note: "Stir-fried wheat noodles, usually with pork and cabbage.", contains: ["pork"], say: ["yakisoba"] },
   { names: ["枝豆"], en: "Edamame", note: "Boiled young soybeans with salt.", contains: [], say: ["edamame", "soybeans"] },
   { names: ["焼き鳥盛り合わせ", "焼鳥盛り合わせ", "串盛り合わせ"], en: "Assorted yakitori", note: "Grilled skewers, mostly chicken; some shops add pork.", contains: ["chicken"], say: ["yakitori", "skewers", "barbecue"] },
@@ -56,13 +56,13 @@ export const DISHES: Dish[] = [
   { names: ["すき焼き"], en: "Sukiyaki", note: "Sweet soy hot pot with beef, dipped in raw egg.", contains: ["beef", "egg"], say: ["sukiyaki"] },
   { names: ["焼肉"], en: "Yakiniku", note: "Grill-it-yourself meat, mostly beef; pork too.", contains: ["beef"], say: ["yakiniku", "grill"] },
   { names: ["チキンナゲット", "ナゲット"], en: "Chicken nuggets", note: "Breaded fried chicken pieces.", contains: ["chicken"], say: ["nuggets"] },
-  { names: ["日本酒"], en: "Sake", note: "Japanese rice wine.", contains: ["alcohol"], say: ["sake"] },
-  { names: ["焼酎"], en: "Shochu", note: "Japanese distilled spirit.", contains: ["alcohol"], say: ["shochu"] },
-  { names: ["ハイボール"], en: "Highball", note: "Whisky and soda.", contains: ["alcohol"], say: ["highball"] },
-  { names: ["梅酒"], en: "Plum wine", note: "Sweet plum liqueur.", contains: ["alcohol"], say: ["plum wine", "umeshu"] },
-  { names: ["ウーロン茶", "烏龍茶"], en: "Oolong tea", note: "Cold or hot oolong tea.", contains: [], say: ["oolong", "tea"] },
-  { names: ["緑茶", "お茶"], en: "Green tea", note: "Japanese green tea.", contains: [], say: ["green tea", "tea"] },
-  { names: ["オレンジジュース"], en: "Orange juice", note: "Orange juice.", contains: [], say: ["orange juice", "juice"] },
+  { names: ["日本酒"], en: "Sake", note: "Japanese rice wine.", contains: ["alcohol"], say: ["drinks", "inumin", "sake"] },
+  { names: ["焼酎"], en: "Shochu", note: "Japanese distilled spirit.", contains: ["alcohol"], say: ["drinks", "inumin", "shochu"] },
+  { names: ["ハイボール"], en: "Highball", note: "Whisky and soda.", contains: ["alcohol"], say: ["drinks", "inumin", "highball"] },
+  { names: ["梅酒"], en: "Plum wine", note: "Sweet plum liqueur.", contains: ["alcohol"], say: ["drinks", "inumin", "plum wine", "umeshu"] },
+  { names: ["ウーロン茶", "烏龍茶"], en: "Oolong tea", note: "Cold or hot oolong tea.", contains: [], say: ["drinks", "inumin", "oolong", "tea"] },
+  { names: ["緑茶", "お茶"], en: "Green tea", note: "Japanese green tea.", contains: [], say: ["drinks", "inumin", "green tea", "tea"] },
+  { names: ["オレンジジュース"], en: "Orange juice", note: "Orange juice.", contains: [], say: ["drinks", "inumin", "orange juice", "juice"] },
   { names: ["ランチセット"], en: "Lunch set", note: "Set meal; ask what's in it.", contains: [], say: ["lunch set", "set"] },
   // ---------- Korea ----------
   { names: ["김치찌개"], en: "Kimchi jjigae", note: "Spicy kimchi stew, usually with pork and tofu.", contains: ["pork"], say: ["kimchi stew", "jjigae"] },
@@ -76,9 +76,9 @@ export const DISHES: Dish[] = [
   { names: ["냉면"], en: "Naengmyeon", note: "Cold buckwheat noodles in beef broth.", contains: ["beef"], say: ["naengmyeon", "cold noodles"] },
   { names: ["양념치킨", "치킨"], en: "Korean fried chicken", note: "Crispy fried chicken, plain or in sweet-spicy sauce.", contains: ["chicken"], say: ["chicken", "fried chicken"] },
   { names: ["삼계탕"], en: "Samgyetang", note: "Whole young chicken soup with ginseng.", contains: ["chicken"], say: ["samgyetang", "chicken soup"] },
-  { names: ["소주"], en: "Soju", note: "Korean distilled spirit.", contains: ["alcohol"], say: ["soju"] },
-  { names: ["막걸리"], en: "Makgeolli", note: "Milky rice wine.", contains: ["alcohol"], say: ["makgeolli"] },
-  { names: ["맥주"], en: "Beer", note: "Beer.", contains: ["alcohol"], say: ["beer"] },
+  { names: ["소주"], en: "Soju", note: "Korean distilled spirit.", contains: ["alcohol"], say: ["drinks", "inumin", "soju"] },
+  { names: ["막걸리"], en: "Makgeolli", note: "Milky rice wine.", contains: ["alcohol"], say: ["drinks", "inumin", "makgeolli"] },
+  { names: ["맥주"], en: "Beer", note: "Beer.", contains: ["alcohol"], say: ["drinks", "inumin", "beer"] },
   // ---------- China, Taiwan, Hong Kong ----------
   { names: ["小笼包", "小籠包"], en: "Xiaolongbao", note: "Soup dumplings, usually pork.", contains: ["pork"], say: ["xiaolongbao", "soup dumplings"] },
   { names: ["饺子", "水饺", "水餃"], en: "Jiaozi", note: "Boiled dumplings, often pork.", contains: ["pork"], say: ["dumplings", "jiaozi"] },
@@ -87,12 +87,12 @@ export const DISHES: Dish[] = [
   { names: ["宫保鸡丁", "宮保雞丁"], en: "Kung pao chicken", note: "Stir-fried chicken with peanuts and chili.", contains: ["chicken", "peanut"], say: ["kung pao"] },
   { names: ["北京烤鸭", "北京烤鴨", "烤鸭", "烤鴨"], en: "Peking duck", note: "Roast duck with thin pancakes.", contains: [], say: ["peking duck", "duck"] },
   { names: ["牛肉面", "牛肉麵"], en: "Beef noodle soup", note: "Noodles in beef broth with braised beef.", contains: ["beef"], say: ["beef noodles"] },
-  { names: ["珍珠奶茶"], en: "Bubble milk tea", note: "Milk tea with tapioca pearls.", contains: [], say: ["milk tea", "bubble tea"] },
+  { names: ["珍珠奶茶"], en: "Bubble milk tea", note: "Milk tea with tapioca pearls.", contains: [], say: ["drinks", "inumin", "milk tea", "bubble tea"] },
   { names: ["叉烧饭", "叉燒飯", "叉烧", "叉燒"], en: "Char siu", note: "Sweet barbecued pork.", contains: ["pork"], say: ["char siu", "barbecue pork"] },
   { names: ["云吞面", "雲吞麵", "馄饨", "餛飩"], en: "Wonton noodles", note: "Noodle soup with shrimp-and-pork wontons.", contains: ["pork", "seafood"], say: ["wonton"] },
   { names: ["糖醋排骨"], en: "Sweet and sour pork ribs", note: "Pork ribs in sweet and sour sauce.", contains: ["pork"], say: ["sweet and sour"] },
   { names: ["担担面", "擔擔麵"], en: "Dandan noodles", note: "Spicy sesame noodles with minced pork.", contains: ["pork"], say: ["dandan"] },
-  { names: ["啤酒"], en: "Beer", note: "Beer.", contains: ["alcohol"], say: ["beer"] },
+  { names: ["啤酒"], en: "Beer", note: "Beer.", contains: ["alcohol"], say: ["drinks", "inumin", "beer"] },
 ];
 
 const norm = (s: string) => s.replace(/[\s※*・()（）]/g, "");

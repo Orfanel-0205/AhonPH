@@ -84,8 +84,14 @@ export function parseSplit(text: string, itemCount: number, people: string[]): {
   return { shares, assigned };
 }
 
-const EVERYONE = /\b(lahat|everyone|everybody|all of us|we all|shared by all)\b/i;
-const ME = /\b(akin|ako|me|mine|my)\b/i;
+// "lahat ng beer" is "all of the beer", not "everyone".
+const EVERYONE = /\b(lahat(?!\s+ng\b)|everyone|everybody|all of us|we all|shared by all|evenly)\b/i;
+// First person, including "we" forms, which include the speaker.
+const ME = /\b(akin|ako|ko|me|mine|my|i|kami|kaming|namin|tayo|natin|we|us)\b/i;
+// "libre ko", "treat ni Maria", "sagot ni Jun": that person pays.
+const TREAT = /\b(libre|treat|sagot|taya)\b/i;
+// "the rest we split", "iba pa, hati tayo": every item nobody named is shared by everyone.
+const REST = /\b(the rest|everything else|iba pa|natitira|yung iba)\b/i;
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
@@ -98,21 +104,29 @@ export function ruleSplit(said: string, aliases: string[][], people: string[]): 
   const sets = aliases.map(() => new Set<number>());
   const everyone = aliases.map(() => false);
   const matched = aliases.map(() => false);
+  // A clause that names items but no people continues the list before it ("kina Maria at Jun ang yakitori, karaage").
+  let prev: { who: Set<number>; all: boolean } | null = null;
+  const restShared = REST.test(said);
   for (const clause of said.toLowerCase().split(/[,;.!?]|\btapos\b|\bthen\b/)) {
-    const who = new Set<number>();
+    let who = new Set<number>();
     people.forEach((p, k) => {
       if (k > 0 && new RegExp(String.raw`(^|[^\p{L}])${escapeRe(p.toLowerCase())}($|[^\p{L}])`, "u").test(clause)) who.add(k);
     });
     if (ME.test(clause)) who.add(0);
-    const all = EVERYONE.test(clause);
+    let all = EVERYONE.test(clause) && !TREAT.test(clause);
+    const items = aliases.map((words, i) => (words.some((w) => w.trim().length >= 2 && clause.includes(w.trim().toLowerCase())) ? i : -1)).filter((i) => i >= 0);
+    if (!who.size && !all && items.length && prev) ({ who, all } = prev);
     if (!who.size && !all) continue;
-    aliases.forEach((words, i) => {
-      if (!words.some((w) => w.trim().length >= 2 && clause.includes(w.trim().toLowerCase()))) return;
+    prev = { who, all };
+    // "Libre ko na lahat": the treat covers every item when none is named.
+    const targets = items.length ? items : TREAT.test(clause) ? aliases.map((_, i) => i) : [];
+    for (const i of targets) {
       matched[i] = true;
       if (all) everyone[i] = true;
       else who.forEach((k) => sets[i].add(k));
-    });
+    }
   }
+  if (restShared) aliases.forEach((_, i) => !matched[i] && ((matched[i] = true), (everyone[i] = true)));
   return { shares: sets.map((s, i) => (everyone[i] ? [] : [...s].sort((a, b) => a - b))), matched };
 }
 
