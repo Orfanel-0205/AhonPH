@@ -13,9 +13,27 @@ export interface Settings {
   targetLang: string;
   /** True once the one-time on-device AI setup screen has been completed or skipped. */
   setupDone: boolean;
+  /** Usap: the traveler's language and the other person's language (ML Kit codes). */
+  meLang: "tl" | "en";
+  themLang: string;
+  /** Trip currency for amounts said without a currency ("ramen 1200" in Japan). Null at home. */
+  tripCurrency: CurrencyCode | null;
+  /** Accommodation, shown to drivers in the local language. */
+  stayName: string;
+  stayAddress: string;
 }
 
-const DEFAULT_SETTINGS: Settings = { hubUrl: "", currency: "USD", targetLang: "en", setupDone: false };
+const DEFAULT_SETTINGS: Settings = {
+  hubUrl: "",
+  currency: "USD",
+  targetLang: "en",
+  setupDone: false,
+  meLang: "tl",
+  themLang: "ja",
+  tripCurrency: null,
+  stayName: "",
+  stayAddress: "",
+};
 
 interface Store {
   ready: boolean;

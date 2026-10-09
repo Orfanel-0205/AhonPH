@@ -4,6 +4,7 @@ import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { Button, Chip, Muted, styles } from "../components";
 import { downloadNano, refreshNano, useNano } from "../nanoStore";
 import { downloadedLanguages, prepareTranslation, TRAVELER_LANGUAGES } from "../onDevice";
+import { downloadSpeech, offlineSpeechLanguages } from "../speech";
 import { useStore } from "../store";
 import { C, S } from "../theme";
 
@@ -44,11 +45,36 @@ export function SetupScreen({ onDone }: { onDone: () => void }) {
   const [wanted, setWanted] = useState<string[]>([settings.targetLang || "en"]);
   const [langBusy, setLangBusy] = useState(false);
   const [langError, setLangError] = useState<string | null>(null);
+  const [speechLangs, setSpeechLangs] = useState<string[] | null>(null);
+  const [speechBusy, setSpeechBusy] = useState(false);
+  const [speechNote, setSpeechNote] = useState<string | null>(null);
 
   useEffect(() => {
     refreshNano();
     downloadedLanguages().then(setLangs);
+    offlineSpeechLanguages().then(setSpeechLangs);
   }, []);
+
+  // Offline speech: Filipino and English for you, plus the languages you picked for the people you'll meet.
+  const speechNeeded = [...new Set(["tl", "en", ...wanted])];
+  const speechMissing = speechLangs ? speechNeeded.filter((l) => !speechLangs.includes(l)) : speechNeeded;
+
+  async function getSpeech() {
+    setSpeechBusy(true);
+    setSpeechNote(null);
+    const results: string[] = [];
+    for (const code of speechMissing) {
+      try {
+        const status = await downloadSpeech(code);
+        results.push(`${code}: ${status.replace(/_/g, " ")}`);
+      } catch (e) {
+        results.push(`${code}: not available (${e instanceof Error ? e.message : String(e)})`);
+      }
+    }
+    setSpeechLangs(await offlineSpeechLanguages());
+    setSpeechNote(results.join(" · "));
+    setSpeechBusy(false);
+  }
 
   // Tagalog is the source pack; English ships with ML Kit. Each other target needs its own pack.
   const needed = ["tl", ...wanted.filter((w) => w !== "en")];
@@ -129,6 +155,20 @@ export function SetupScreen({ onDone }: { onDone: () => void }) {
               <Button label="Download languages" icon="cloud-download" variant="secondary" onPress={getLanguages} busy={langBusy} disabled={wanted.length === 0} />
             ) : null}
             {langError ? <Text style={{ color: C.danger, fontSize: 13 }}>{langError}</Text> : null}
+          </View>
+        }
+      />
+
+      <Step
+        icon="mic"
+        title="Offline speech (Usap)"
+        body="Android's on-device speech recognition, so you can talk with no internet. One download per language."
+        state={speechBusy ? "working" : speechLangs && speechMissing.length === 0 ? "ready" : "todo"}
+        action={
+          <View style={{ gap: S.xs }}>
+            {speechLangs ? <Muted>On this phone: {speechLangs.length ? speechLangs.join(", ") : "none yet"}</Muted> : null}
+            {speechMissing.length ? <Button label={`Download speech: ${speechMissing.join(", ")}`} icon="cloud-download" variant="secondary" onPress={getSpeech} busy={speechBusy} /> : null}
+            {speechNote ? <Muted>{speechNote}</Muted> : null}
           </View>
         }
       />

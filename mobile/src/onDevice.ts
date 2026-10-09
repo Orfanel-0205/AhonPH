@@ -11,15 +11,16 @@ export type { NanoInfo, NanoStatus };
 
 export const TRAVELER_LANGUAGES: { code: string; label: string }[] = [
   { code: "en", label: "English" },
-  { code: "ko", label: "한국어" },
   { code: "ja", label: "日本語" },
+  { code: "ko", label: "한국어" },
   { code: "zh", label: "中文" },
+  { code: "th", label: "ภาษาไทย" },
+  { code: "vi", label: "Tiếng Việt" },
+  { code: "ar", label: "العربية" },
   { code: "es", label: "Español" },
-  { code: "fr", label: "Français" },
-  { code: "de", label: "Deutsch" },
 ];
 
-const SUPPORTED_SOURCES = new Set(["en", "tl", "ko", "ja", "zh", "es", "fr", "de", "id", "ms", "vi", "th"]);
+const SUPPORTED_SOURCES = new Set(["en", "tl", "ko", "ja", "zh", "es", "fr", "de", "id", "ms", "vi", "th", "ar"]);
 
 /** Detects the language of scanned text on-device; Filipino text is reported as "tl". */
 export async function detectLanguage(text: string): Promise<string> {

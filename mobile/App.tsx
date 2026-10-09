@@ -10,16 +10,18 @@ import { HomeScreen } from "./src/screens/HomeScreen";
 import { PrivacyScreen } from "./src/screens/PrivacyScreen";
 import { ScanScreen } from "./src/screens/ScanScreen";
 import { SetupScreen } from "./src/screens/SetupScreen";
+import { TalkScreen } from "./src/screens/TalkScreen";
 import { StoreProvider, useStore } from "./src/store";
 import { C } from "./src/theme";
 
-type Tab = "home" | "scan" | "ask" | "privacy";
+type Tab = "home" | "talk" | "scan" | "ask" | "privacy";
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
 const TABS: { id: Tab; label: string; icon: IconName }[] = [
   { id: "home", label: "Home", icon: "home" },
+  { id: "talk", label: "Usap", icon: "chatbox-ellipses" },
   { id: "scan", label: "Scan", icon: "scan" },
-  { id: "ask", label: "Kita AI", icon: "chatbubbles" },
+  { id: "ask", label: "Gastos", icon: "wallet" },
   { id: "privacy", label: "Privacy", icon: "shield-checkmark" },
 ];
 
@@ -72,6 +74,8 @@ function Shell() {
           <SetupScreen onDone={() => setSetupOpen(false)} />
         ) : tab === "home" ? (
           <HomeScreen onScan={() => setTab("scan")} />
+        ) : tab === "talk" ? (
+          <TalkScreen />
         ) : tab === "scan" ? (
           <ScanScreen onSaved={() => setTab("home")} />
         ) : tab === "ask" ? (

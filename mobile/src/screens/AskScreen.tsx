@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Button, Card, Chip, ErrorBox, H2, Muted, Pill, styles } from "../components";
 import { hubAdvise, hubQuickLog, hubStatus, normalizeHubUrl, type HubStatus } from "../hub";
 import { NANO_LABEL, phoneAdvise, phoneQuickLog } from "../nanoEngine";
 import { useNano } from "../nanoStore";
+import { listen } from "../speech";
 import {
+  applyCurrency,
   basicQuickLog,
   budgetStatuses,
   buildAdvisorContext,
@@ -17,6 +20,7 @@ import {
   summarize,
   todayISO,
   yearOnYearWindows,
+  type CurrencyCode,
   type Insight,
   type ParsedRecord,
 } from "../shared";
@@ -135,8 +139,8 @@ export function AskScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
 
   return (
     <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>Kita AI</Text>
-      <Muted style={{ marginBottom: S.md }}>Log in Taglish and ask about your money. The AI runs on your own devices, never in the cloud.</Muted>
+      <Text style={styles.title}>Gastos</Text>
+      <Muted style={{ marginBottom: S.md }}>No receipt? Just say it: &quot;taxi 2,300 yen&quot;. KitaPH logs it in pesos and answers money questions in Taglish, on your phone.</Muted>
 
       <View style={[styles.wrap, { marginBottom: S.sm }]}>
         {engines.map((e) => (
@@ -157,7 +161,7 @@ export function AskScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
         </Pressable>
       )}
 
-      <QuickLog engine={engine} onSave={saveRecords} />
+      <QuickLog engine={engine} onSave={saveRecords} tripCurrency={settings.tripCurrency} meLang={settings.meLang} onTripCurrency={(c) => setSettings({ tripCurrency: c })} />
       <Advisor key={engine.id} engine={engine} context={context} />
       <HubCard
         hubInfo={hubInfo}
@@ -171,8 +175,23 @@ export function AskScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
   );
 }
 
-function QuickLog({ engine, onSave }: { engine: Engine; onSave: (r: ParsedRecord[]) => void }) {
+const TRIP_CURRENCIES: (CurrencyCode | null)[] = [null, "JPY", "KRW", "HKD", "SGD", "TWD", "THB", "VND", "MYR", "AED", "SAR", "QAR", "USD", "EUR"];
+
+function QuickLog({
+  engine,
+  onSave,
+  tripCurrency,
+  meLang,
+  onTripCurrency,
+}: {
+  engine: Engine;
+  onSave: (r: ParsedRecord[]) => void;
+  tripCurrency: CurrencyCode | null;
+  meLang: "tl" | "en";
+  onTripCurrency: (c: CurrencyCode | null) => void;
+}) {
   const [text, setText] = useState("");
+  const [listening, setListening] = useState(false);
   const [records, setRecords] = useState<ParsedRecord[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -184,21 +203,52 @@ function QuickLog({ engine, onSave }: { engine: Engine; onSave: (r: ParsedRecord
     const r = await engine.quickLog(text, todayISO());
     setBusy(false);
     if (!r.ok) return setError(r.error);
-    setRecords(r.data.records);
+    // Amounts in yen, won, baht... (said or implied by the trip currency) are kept in pesos.
+    setRecords(applyCurrency(r.data.records, text, tripCurrency));
     setMeta(r.data.meta);
+  }
+
+  async function dictate() {
+    setError(null);
+    setListening(true);
+    try {
+      const s = await listen(meLang, setText);
+      const heard = await s.done;
+      if (heard) setText(heard);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setListening(false);
+    }
   }
 
   return (
     <Card>
-      <H2>Mag-log sa Taglish</H2>
-      <TextInput
-        value={text}
-        onChangeText={setText}
-        placeholder="jeep 26, lunch 95, load 50"
-        multiline
-        style={[styles.input, { minHeight: 72, textAlignVertical: "top" }]}
-        accessibilityLabel="What did you spend or receive?"
-      />
+      <H2>Mag-log · walang resibo</H2>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: S.sm }} style={{ marginBottom: S.sm }}>
+        {TRIP_CURRENCIES.map((c) => (
+          <Chip key={c ?? "PHP"} label={c ?? "₱ PHP"} selected={tripCurrency === c} onPress={() => onTripCurrency(c)} />
+        ))}
+      </ScrollView>
+      <View style={styles.row}>
+        <TextInput
+          value={text}
+          onChangeText={setText}
+          placeholder={tripCurrency ? `taxi 2,300 (${tripCurrency}), ramen 1200` : "jeep 26, lunch 95, load 50"}
+          multiline
+          style={[styles.input, { flex: 1, minHeight: 72, textAlignVertical: "top" }]}
+          accessibilityLabel="What did you spend or receive?"
+        />
+        <Pressable
+          accessibilityLabel="Say it"
+          onPress={dictate}
+          disabled={listening}
+          style={{ width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center", backgroundColor: listening ? C.danger : C.brandSoft }}
+        >
+          <Ionicons name={listening ? "radio-button-on" : "mic"} size={24} color={listening ? "#fff" : C.brandStrong} />
+        </Pressable>
+      </View>
+      {tripCurrency ? <Muted style={{ marginTop: 4 }}>Amounts without a currency are read as {tripCurrency} and saved in pesos (BSP rate, Oct 8, 2026).</Muted> : null}
       <View style={{ marginTop: S.sm }}>
         <Button label="Basahin" icon="sparkles" onPress={run} busy={busy} disabled={!text.trim()} />
       </View>

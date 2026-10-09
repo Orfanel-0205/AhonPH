@@ -11,6 +11,7 @@ import {
   INCOME_CATEGORIES,
   normalizeQuickLog,
   parseCompactReceipt,
+  parseSuggestions,
   quickLogSystemPrompt,
   refineWithLocalKnowledge,
   type ParsedRecord,
@@ -104,4 +105,14 @@ export async function phoneReadReceipt(uri: string): Promise<ReturnType<typeof p
     throw friendly(e);
   }
   return { ...parseCompactReceipt(r.text), ms: r.ms };
+}
+
+/** Three reply ideas from Gemini Nano on the phone; an empty list means "use the phrase bank". */
+export async function phoneSuggestReplies(prompt: string): Promise<string[]> {
+  try {
+    const r = await withOneRetry(() => nanoGenerate(prompt, { temperature: 0.4, maxOutputTokens: 120 }));
+    return parseSuggestions(r.text);
+  } catch {
+    return [];
+  }
 }
