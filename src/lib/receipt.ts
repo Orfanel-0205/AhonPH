@@ -37,6 +37,23 @@ export function checkReceipt(items: ReceiptItem[], totalCentavos: Centavos): { i
   };
 }
 
+/**
+ * Like checkReceipt, but also accepts items that add up to the printed SUBTOTAL when the TOTAL
+ * includes tax or fees added on top (common on foreign receipts).
+ */
+export function checkReceiptWithSubtotal(
+  items: ReceiptItem[],
+  totalCentavos: Centavos,
+  subtotalCentavos: Centavos | null,
+): { items: ReceiptItem[]; check: ReceiptCheck; basis: "total" | "subtotal" } {
+  const byTotal = checkReceipt(items, totalCentavos);
+  if (byTotal.check.status === "ok" || byTotal.check.status === "repaired" || subtotalCentavos === null || subtotalCentavos > totalCentavos) {
+    return { ...byTotal, basis: "total" };
+  }
+  const bySubtotal = checkReceipt(items, subtotalCentavos);
+  return bySubtotal.check.status === "ok" || bySubtotal.check.status === "repaired" ? { ...bySubtotal, basis: "subtotal" } : { ...byTotal, basis: "total" };
+}
+
 /** Coerces a model-supplied quantity into something sane. */
 export function sanitizeQuantity(q: unknown): number {
   return typeof q === "number" && Number.isFinite(q) && q > 0 && q < 10_000 ? q : 1;

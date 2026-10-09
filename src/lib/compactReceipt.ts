@@ -9,12 +9,12 @@ import { toCentavos } from "./money";
 import { sanitizeQuantity } from "./receipt";
 import type { Centavos, ReceiptItem } from "./types";
 
-export const COMPACT_RECEIPT_PROMPT = `Read this receipt photo. Reply in exactly this format and nothing else:
+export const COMPACT_RECEIPT_PROMPT = `Read this receipt photo. Reply in exactly this format and nothing else, in this order:
 STORE;store name
-item name;quantity;line total
-item name;quantity;line total
 TOTAL;total amount paid
-Use one line per purchased item. The line total is the amount for the whole line, not the unit price. Copy numbers exactly as printed. Do not list VAT, subtotal, cash or change as items.`;
+item name;quantity;line total
+item name;quantity;line total
+Write STORE and TOTAL first. Then list at most 12 purchased items, one per line, with short names. The line total is the amount for the whole line, not the unit price. Copy numbers exactly as printed. Do not list tax, VAT, subtotal, cash, change or savings as items.`;
 
 const num = (s: string | undefined) => {
   const v = Number((s ?? "").replace(/[₱,\s]|PHP/gi, ""));

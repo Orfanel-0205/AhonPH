@@ -5,7 +5,7 @@
 import { parseReceiptDate } from "./ai";
 import { addDays } from "./dates";
 import { toCentavos } from "./money";
-import { checkReceipt, type ReceiptCheck } from "./receipt";
+import { checkReceipt, checkReceiptWithSubtotal, type ReceiptCheck } from "./receipt";
 import type { Centavos, ReceiptItem } from "./types";
 
 export interface OcrFrame {
@@ -15,9 +15,26 @@ export interface OcrFrame {
   height: number;
 }
 
+export interface OcrPoint {
+  x: number;
+  y: number;
+}
+
 export interface OcrLine {
   text: string;
   frame?: OcrFrame;
+  /** ML Kit corner points: top-left, top-right, bottom-right, bottom-left. They carry the text's tilt. */
+  corners?: OcrPoint[];
+}
+
+/** Median tilt (radians) of the longer text lines, from their top edge. 0 when unknown. */
+export function estimateSkew(lines: OcrLine[]): number {
+  const angles = lines
+    .filter((l) => l.corners && l.corners.length >= 2 && l.frame && l.frame.width > l.frame.height * 2)
+    .map((l) => Math.atan2(l.corners![1].y - l.corners![0].y, l.corners![1].x - l.corners![0].x))
+    .filter((a) => Math.abs(a) < Math.PI / 6)
+    .sort((a, b) => a - b);
+  return angles.length >= 3 ? angles[Math.floor(angles.length / 2)] : 0;
 }
 
 export interface ScannedReceipt {
@@ -29,7 +46,11 @@ export interface ScannedReceipt {
   /** False when no TOTAL line was found and the items' sum is used instead. */
   totalFound: boolean;
   vatCentavos: Centavos | null;
+  /** Printed SUBTOTAL, when present. */
+  subtotalCentavos: Centavos | null;
   check: ReceiptCheck;
+  /** "subtotal" when the items match the SUBTOTAL and the TOTAL adds tax or fees on top. */
+  checkBasis: "total" | "subtotal";
   /** The reconstructed rows, shown to the user so they can see what was read. */
   rows: string[];
 }
@@ -42,22 +63,31 @@ export function linesToRows(lines: OcrLine[]): string[] {
   }
   const heights = withFrames.map((l) => l.frame!.height).sort((a, b) => a - b);
   const tolerance = heights[Math.floor(heights.length / 2)] * 0.5;
-  const sorted = [...withFrames].sort((a, b) => a.frame!.top + a.frame!.height / 2 - (b.frame!.top + b.frame!.height / 2));
-  const rows: { cy: number; parts: OcrLine[] }[] = [];
-  for (const l of sorted) {
+  // Rotate centers back by the photo's tilt so a name and its price on one printed row line up,
+  // even when the receipt was photographed at an angle.
+  const skew = estimateSkew(withFrames);
+  const cos = Math.cos(skew);
+  const sin = Math.sin(skew);
+  const placed = withFrames.map((l) => {
+    const cx = l.frame!.left + l.frame!.width / 2;
     const cy = l.frame!.top + l.frame!.height / 2;
+    return { line: l, x: cx * cos + cy * sin, y: -cx * sin + cy * cos };
+  });
+  placed.sort((a, b) => a.y - b.y);
+  const rows: { cy: number; parts: typeof placed }[] = [];
+  for (const p of placed) {
     const row = rows[rows.length - 1];
-    if (row && Math.abs(cy - row.cy) <= tolerance) {
-      row.parts.push(l);
-      row.cy = (row.cy * (row.parts.length - 1) + cy) / row.parts.length;
+    if (row && Math.abs(p.y - row.cy) <= tolerance) {
+      row.parts.push(p);
+      row.cy = (row.cy * (row.parts.length - 1) + p.y) / row.parts.length;
     } else {
-      rows.push({ cy, parts: [l] });
+      rows.push({ cy: p.y, parts: [p] });
     }
   }
   return rows.map((r) =>
     r.parts
-      .sort((a, b) => a.frame!.left - b.frame!.left)
-      .map((p) => p.text.trim())
+      .sort((a, b) => a.x - b.x)
+      .map((p) => p.line.text.trim())
       .join("  "),
   );
 }
@@ -69,9 +99,10 @@ const TOTAL_RE = /\b(GRAND\s*TOTAL|TOTAL\s*AMOUNT(\s*DUE)?|AMOUNT\s*DUE|TOTAL\s*
 const NOT_TOTAL_RE = /SUB\s*-?\s*TOTAL|TOTAL\s*(ITEMS?|QTY|QUANTITY|DISC(OUNT)?|SAVINGS?|PCS)/i;
 const VAT_AMOUNT_RE = /^(VAT|V\.A\.T\.?)(\s*\(?12\s*%\)?)?\s*(AMOUNT)?\b/i;
 const SKIP_RE =
-  /SUB\s*-?\s*TOTAL|VAT|V\.A\.T|ZERO[-\s]*RATED|EXEMPT|CASH|CHANGE|TENDER|G\s*CASH|MAYA|CARD|CREDIT|DEBIT|\bTIN\b|\bS\.?I\.?\s*(NO|#)|\bO\.?R\.?\s*(NO|#)|INVOICE|TRANS(ACTION)?|CASHIER|TERMINAL|ITEMS?\s*SOLD|TOTAL\s*(ITEMS?|QTY|PCS)|BALANCE|POINTS|SERIAL|\bMIN\b|\bPTU\b|ACCRED|THANK|\bDATE\b|\bTIME\b|CUSTOMER|ADDRESS|BUSINESS\s*STYLE/i;
+  /SUB\s*-?\s*TOTAL|VAT|V\.A\.T|ZERO[-\s]*RATED|EXEMPT|CASH|CHANGE|TENDER|G\s*CASH|MAYA|CARD|CREDIT|DEBIT|\bTIN\b|\bS\.?I\.?\s*(NO|#)|\bO\.?R\.?\s*(NO|#)|INVOICE|TRANS(ACTION)?|CASHIER|TERMINAL|ITEMS?\s*SOLD|TOTAL\s*(ITEMS?|QTY|PCS)|BALANCE|POINTS|SERIAL|\bMIN\b|\bPTU\b|ACCRED|THANK|\bDATE\b|\bTIME\b|CUSTOMER|ADDRESS|BUSINESS\s*STYLE|\bTAX\b|SAVINGS?|YOU\s*SAVED|\bTEND(ERED)?\b/i;
 const DISCOUNT_RE = /DISCOUNT|\bLESS\b|SENIOR|\bPWD\b|PROMO|\bDISC\b/i;
 const SERVICE_RE = /SERVICE\s*CHARGE|SVC\s*CHG|SERV\.?\s*CHG/i;
+const SUBTOTAL_RE = /SUB\s*-?\s*TOTAL/i;
 
 function toAmount(s: string): number {
   return Number(s.replace(/,/g, ""));
@@ -86,6 +117,9 @@ function stripAmount(row: string): { label: string; amount: number | null } {
 function cleanName(s: string): string {
   return s
     .replace(QTY_AT, "")
+    // Barcodes / product codes and trailing tax-flag letters ("N", "X", "F") are not part of the name.
+    .replace(/\b\d{6,}\b/g, "")
+    .replace(/\s+[A-Z]$/, "")
     .replace(/\s{2,}/g, " ")
     .replace(/^[\s\-*.:]+|[\s\-*.:]+$/g, "")
     .trim();
@@ -106,7 +140,9 @@ export function parseOcrReceipt(lines: OcrLine[], today: string): ScannedReceipt
   if (rows.length === 0) return null;
 
   const items: ReceiptItem[] = [];
-  let total: number | null = null;
+  /** Every TOTAL-like amount, in order; the one that agrees with the items is chosen afterwards. */
+  const totals: number[] = [];
+  let subtotal: number | null = null;
   let vat: number | null = null;
   let pendingName: string | null = null;
   let awaitingTotal = false;
@@ -118,7 +154,7 @@ export function parseOcrReceipt(lines: OcrLine[], today: string): ScannedReceipt
     const qty = row.match(QTY_AT);
 
     if (awaitingTotal && amount !== null && label === "") {
-      total = amount;
+      totals.push(amount);
       awaitingTotal = false;
       continue;
     }
@@ -146,9 +182,14 @@ export function parseOcrReceipt(lines: OcrLine[], today: string): ScannedReceipt
     }
 
     if (TOTAL_RE.test(label) && !NOT_TOTAL_RE.test(label)) {
-      // Keep the last TOTAL; when the amount is on the next row, take it from there.
-      if (amount !== null) total = amount;
+      // When the amount is on the next row, take it from there.
+      if (amount !== null) totals.push(amount);
       else awaitingTotal = true;
+      pendingName = null;
+      continue;
+    }
+    if (SUBTOTAL_RE.test(label) && amount !== null) {
+      subtotal = amount;
       pendingName = null;
       continue;
     }
@@ -200,10 +241,23 @@ export function parseOcrReceipt(lines: OcrLine[], today: string): ScannedReceipt
     rows.find((r) => /[A-Z]{3,}/i.test(r) && !AMOUNT_AT_END.test(r) && !SKIP_RE.test(r))?.trim().slice(0, 80) ?? "Receipt";
   // The merchant header is never an item.
   const purchased = items.filter((i) => i.name !== merchant);
-  const totalFound = total !== null && total > 0;
-  const totalCentavos = totalFound ? toCentavos(total!) : purchased.reduce((s, i) => s + i.lineTotalCentavos, 0);
+  const subtotalCentavos = subtotal !== null ? toCentavos(subtotal) : null;
+  const candidates = totals.filter((t) => t > 0).map(toCentavos);
+  const maxItem = purchased.reduce((m, i) => Math.max(m, i.lineTotalCentavos), 0);
+  // Prefer a TOTAL the items actually add up to (last one first), then one consistent with the
+  // SUBTOTAL, then the last TOTAL that is at least as large as the biggest item.
+  const agrees = (c: Centavos) => {
+    const st = checkReceiptWithSubtotal(purchased, c, subtotalCentavos).check.status;
+    return st === "ok" || st === "repaired";
+  };
+  const chosen =
+    [...candidates].reverse().find(agrees) ??
+    [...candidates].reverse().find((c) => c >= maxItem) ??
+    (candidates.length ? Math.max(...candidates) : null);
+  const totalFound = chosen !== null;
+  const totalCentavos = chosen ?? subtotalCentavos ?? purchased.reduce((s, i) => s + i.lineTotalCentavos, 0);
   if (totalCentavos <= 0 && purchased.length === 0) return null;
-  const checked = checkReceipt(purchased, totalCentavos);
+  const checked = checkReceiptWithSubtotal(purchased, totalCentavos, subtotalCentavos);
   const { date, fromReceipt } = findDate(rows, today);
   return {
     merchant,
@@ -213,7 +267,9 @@ export function parseOcrReceipt(lines: OcrLine[], today: string): ScannedReceipt
     totalCentavos,
     totalFound,
     vatCentavos: vat !== null ? toCentavos(vat) : null,
+    subtotalCentavos,
     check: checked.check,
+    checkBasis: checked.basis,
     rows,
   };
 }

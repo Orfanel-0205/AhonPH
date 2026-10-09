@@ -11,6 +11,7 @@ import { detectLanguage, downloadedLanguages, prepareTranslation, translateTexts
 import {
   breakdownReceipt,
   checkReceipt,
+  checkReceiptWithSubtotal,
   convertFromPhp,
   EXPENSE_CATEGORIES,
   EXPENSE_INFO,
@@ -148,7 +149,9 @@ function WorkerResult({ ocr, imageUri, imageBase64, onSaved }: { ocr: OcrResult;
   const [category, setCategory] = useState<ExpenseCategory>("food");
 
   const totalCentavos = Number.isFinite(Number(totalText)) && Number(totalText) > 0 ? toCentavos(Number(totalText)) : 0;
-  const check = useMemo(() => checkReceipt(items, totalCentavos).check, [items, totalCentavos]);
+  const checked = useMemo(() => checkReceiptWithSubtotal(items, totalCentavos, parsed?.subtotalCentavos ?? null), [items, totalCentavos, parsed]);
+  const check = checked.check;
+  const checksOut = check.status === "ok" || check.status === "repaired" || check.status === "no-items";
   const groups = useMemo(() => breakdownReceipt(items), [items]);
   const tips = useMemo(
     () =>
@@ -170,11 +173,20 @@ function WorkerResult({ ocr, imageUri, imageBase64, onSaved }: { ocr: OcrResult;
         setHubNote("The phone's AI couldn't read items from this photo. Try a flatter, brighter photo.");
         return;
       }
-      if (r.items.length) setItems(r.items);
-      if (r.totalCentavos) setTotalText((r.totalCentavos / 100).toFixed(2));
+      const c = checkReceipt(r.items, r.totalCentavos ?? 0);
+      const addsUp = r.items.length > 0 && (c.check.status === "ok" || c.check.status === "repaired");
       if (r.merchant) setMerchant(r.merchant);
-      const c = checkReceipt(r.items, r.totalCentavos ?? 0).check;
-      setHubNote(`Read by Gemini Nano on this phone in ${(r.ms / 1000).toFixed(1)}s. ${c.status === "ok" || c.status === "repaired" ? "Items add up ✓" : "Items don't add up yet — check them below."}`);
+      if (r.totalCentavos) setTotalText((r.totalCentavos / 100).toFixed(2));
+      // Only replace the items when the AI's own items add up; otherwise keep what OCR read and take just the total.
+      if (addsUp) setItems(c.items);
+      const secs = (r.ms / 1000).toFixed(1);
+      setHubNote(
+        addsUp
+          ? `Read by Gemini Nano on this phone in ${secs}s. Items add up ✓`
+          : r.totalCentavos
+            ? `Gemini Nano read the TOTAL (${formatPeso(r.totalCentavos, { showCentavos: true })}) in ${secs}s, but not every item. Check the items, or save the total only.`
+            : `Gemini Nano couldn't read this photo clearly (${secs}s). Try a flatter, brighter photo.`,
+      );
     } catch (e) {
       setHubNote(e instanceof Error ? e.message : String(e));
     } finally {
@@ -211,7 +223,7 @@ function WorkerResult({ ocr, imageUri, imageBase64, onSaved }: { ocr: OcrResult;
 
   const checkPill =
     check.status === "ok" ? (
-      <Pill label="Items add up to the TOTAL ✓" tone="good" icon="checkmark-circle" />
+      <Pill label={checked.basis === "subtotal" ? "Items add up to the SUBTOTAL ✓ (total adds tax/fees)" : "Items add up to the TOTAL ✓"} tone="good" icon="checkmark-circle" />
     ) : check.status === "repaired" ? (
       <Pill label="Fixed quantities so items add up ✓" tone="good" icon="build" />
     ) : check.status === "mismatch" ? (
@@ -261,7 +273,17 @@ function WorkerResult({ ocr, imageUri, imageBase64, onSaved }: { ocr: OcrResult;
         </View>
       ) : null}
 
-      <ExplainReceipt context={receiptContext({ merchant, date: parsed.date, items, totalCentavos }, tips)} />
+      {checksOut ? (
+        <ExplainReceipt context={receiptContext({ merchant, date: parsed.date, items, totalCentavos }, tips)} />
+      ) : (
+        <Card>
+          <H2>This photo is hard to read</H2>
+          <Muted style={{ marginBottom: S.sm }}>
+            The items don&apos;t add up to the TOTAL yet. Fix the TOTAL above, remove wrong items, try Read with phone AI, or keep just the total.
+          </Muted>
+          <Button label="Save total only" icon="receipt" variant="secondary" onPress={() => setItems([])} />
+        </Card>
+      )}
 
       {groups.length ? (
         <Card>

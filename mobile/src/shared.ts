@@ -10,7 +10,7 @@ export { personalInflation, yearOnYearWindows, type PersonalInflation } from "..
 export { buildSampleData, SAMPLE_PERSONA } from "../../src/lib/sample";
 export { buildAdvisorContext } from "../../src/lib/advisorContext";
 export { findUngroundedNumbers } from "../../src/lib/numbers";
-export { checkReceipt, type ReceiptCheck } from "../../src/lib/receipt";
+export { checkReceipt, checkReceiptWithSubtotal, type ReceiptCheck } from "../../src/lib/receipt";
 export { parseOcrReceipt, type OcrLine, type ScannedReceipt } from "../../src/lib/ocrReceipt";
 export { breakdownReceipt, receiptTips, type GroupTotal } from "../../src/lib/receiptInsights";
 export { findPricedLines, explainCharges, type ChargeNote, type PricedLine } from "../../src/lib/traveler";

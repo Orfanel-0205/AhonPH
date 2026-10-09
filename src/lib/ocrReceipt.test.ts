@@ -142,3 +142,74 @@ describe("parseOcrReceipt", () => {
     expect(parseOcrReceipt([], today)).toBeNull();
   });
 });
+
+/** Same as layout(), but the whole receipt is photographed rotated by `degrees` around the origin. */
+function tiltedLayout(rows: (string | [string, string])[], degrees: number): OcrLine[] {
+  const a = (degrees * Math.PI) / 180;
+  const rot = (x: number, y: number) => ({ x: x * Math.cos(a) - y * Math.sin(a), y: x * Math.sin(a) + y * Math.cos(a) });
+  const out: OcrLine[] = [];
+  rows.forEach((r, i) => {
+    const parts = typeof r === "string" ? [r] : r;
+    parts.forEach((text, j) => {
+      if (!text) return;
+      const x = j === 0 ? 24 : 600;
+      const y = 40 + i * 30;
+      const w = 12 * text.length;
+      const corners = [rot(x, y), rot(x + w, y), rot(x + w, y + 22), rot(x, y + 22)];
+      const xs = corners.map((c) => c.x);
+      const ys = corners.map((c) => c.y);
+      out.push({
+        text,
+        corners,
+        frame: { left: Math.min(...xs), top: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) },
+      });
+    });
+  });
+  return out;
+}
+
+describe("real-world robustness", () => {
+  const rows: (string | [string, string])[] = [
+    "PUREGOLD PRICE CLUB",
+    ["NFA RICE 5KG", "245.00"],
+    ["LUCKY ME PANCIT CANTON", "99.00"],
+    ["ALASKA EVAP 370ML", "77.50"],
+    ["SAN MARINO CORNED TUNA", "102.00"],
+    ["SAFEGUARD WHITE 130G", "52.25"],
+    ["TOTAL", "575.75"],
+  ];
+
+  it("pairs names and prices on a photo tilted 4 degrees", () => {
+    expect(linesToRows(tiltedLayout(rows, 4))).toEqual(linesToRows(layout(rows)));
+    const r = parseOcrReceipt(tiltedLayout(rows, -4), today)!;
+    expect(r.check.status).toBe("ok");
+    expect(r.totalCentavos).toBe(57575);
+  });
+
+  it("reads a US-style receipt: barcodes, tax flags, subtotal + tax, change due", () => {
+    const r = parseOcrReceipt(
+      layout([
+        "WALMART SUPERCENTER",
+        ["DRIED CHERRIES 007874205423", "2.95 N"],
+        ["BANANAS 000000004011", "1.24 N"],
+        ["SUBTOTAL", "4.19"],
+        ["TAX 1 7.000 %", "0.29"],
+        ["TOTAL", "4.48"],
+        ["CASH TEND", "20.00"],
+        ["CHANGE DUE", "15.52"],
+      ]),
+      today,
+    )!;
+    expect(r.items.map((i) => i.name)).toEqual(["DRIED CHERRIES", "BANANAS"]);
+    expect(r.totalCentavos).toBe(448);
+    expect(r.subtotalCentavos).toBe(419);
+    expect(r.checkBasis).toBe("subtotal");
+    expect(r.check.status).toBe("ok");
+  });
+
+  it("prefers the TOTAL the items add up to over a later total-like line", () => {
+    const r = parseOcrReceipt(layout(["STORE", ["BREAD", "45.00"], ["MILK", "88.50"], ["TOTAL", "133.50"], ["TOTAL SAVINGS", "9.44"], ["AMOUNT DUE", "9.44"]]), today)!;
+    expect(r.totalCentavos).toBe(13350);
+    expect(r.check.status).toBe("ok");
+  });
+});
