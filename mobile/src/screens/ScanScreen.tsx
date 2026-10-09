@@ -2,6 +2,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useMemo, useState } from "react";
 import { Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { BarRow, Button, Card, Chip, ErrorBox, H2, InsightCard, Muted, Pill, styles } from "../components";
+import { hubReceipt } from "../hub";
 import { recognizeText, translate, TRAVELER_LANGUAGES, type OcrResult } from "../native";
 import {
   breakdownReceipt,
@@ -34,6 +35,7 @@ type Mode = "worker" | "traveler";
 export function ScanScreen({ onSaved }: { onSaved: () => void }) {
   const [mode, setMode] = useState<Mode>("worker");
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [ocr, setOcr] = useState<OcrResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,11 +49,13 @@ export function ScanScreen({ onSaved }: { onSaved: () => void }) {
       }
       const res =
         source === "camera"
-          ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.9 })
-          : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.9 });
+          ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.7, base64: true })
+          : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7, base64: true });
       if (res.canceled || !res.assets?.[0]) return;
       const uri = res.assets[0].uri;
       setImageUri(uri);
+      // Kept only in memory, for the optional hub double-check over local Wi-Fi.
+      setImageBase64(res.assets[0].base64 ?? null);
       setOcr(null);
       setBusy(true);
       const result = await recognizeText(uri);
@@ -66,6 +70,7 @@ export function ScanScreen({ onSaved }: { onSaved: () => void }) {
 
   function reset() {
     setImageUri(null);
+    setImageBase64(null);
     setOcr(null);
     setError(null);
   }
@@ -104,7 +109,7 @@ export function ScanScreen({ onSaved }: { onSaved: () => void }) {
 
       {ocr && ocr.text.trim() ? (
         mode === "worker" ? (
-          <WorkerResult key={imageUri ?? ""} ocr={ocr} onSaved={() => { reset(); onSaved(); }} />
+          <WorkerResult key={imageUri ?? ""} ocr={ocr} imageBase64={imageBase64} onSaved={() => { reset(); onSaved(); }} />
         ) : (
           <TravelerResult key={imageUri ?? ""} ocr={ocr} />
         )
@@ -125,8 +130,10 @@ function RawText({ rows }: { rows: string[] }) {
   );
 }
 
-function WorkerResult({ ocr, onSaved }: { ocr: OcrResult; onSaved: () => void }) {
-  const { data, update } = useStore();
+function WorkerResult({ ocr, imageBase64, onSaved }: { ocr: OcrResult; imageBase64: string | null; onSaved: () => void }) {
+  const { data, update, settings } = useStore();
+  const [hubBusy, setHubBusy] = useState(false);
+  const [hubNote, setHubNote] = useState<string | null>(null);
   const today = todayISO();
   const parsed = useMemo(() => parseOcrReceipt(ocr.lines, today), [ocr, today]);
   const [items, setItems] = useState<ReceiptItem[]>(parsed?.items ?? []);
@@ -146,6 +153,20 @@ function WorkerResult({ ocr, onSaved }: { ocr: OcrResult; onSaved: () => void })
   );
 
   if (!parsed) return <ErrorBox message="This doesn't look like a receipt. Try Traveler mode for menus and signs." />;
+
+  async function doubleCheckWithHub() {
+    if (!imageBase64 || !settings.hubUrl) return;
+    setHubBusy(true);
+    setHubNote(null);
+    const r = await hubReceipt(settings.hubUrl, imageBase64, today);
+    setHubBusy(false);
+    if (!r.ok) return setHubNote(r.error);
+    const h = r.data.receipt;
+    setItems(h.items);
+    setTotalText((h.totalCentavos / 100).toFixed(2));
+    if (h.merchant) setMerchant(h.merchant);
+    setHubNote(`Read by ${r.data.meta.model} on your hub (${r.data.meta.processor}, ${(r.data.meta.durationMs / 1000).toFixed(1)}s). ${h.check.status === "mismatch" ? "Items still don't add up — please check." : "Items add up."}`);
+  }
 
   const save = () => {
     const receiptId = newId("rcpt");
@@ -184,6 +205,12 @@ function WorkerResult({ ocr, onSaved }: { ocr: OcrResult; onSaved: () => void })
           <TextInput value={totalText} onChangeText={setTotalText} keyboardType="decimal-pad" style={[styles.input, { flex: 1, fontSize: 20, fontWeight: "700" }]} accessibilityLabel="Total amount" />
         </View>
         <View style={{ marginTop: S.sm }}>{checkPill}</View>
+        {settings.hubUrl && imageBase64 ? (
+          <View style={{ marginTop: S.md }}>
+            <Button label="Double-check with Hub AI" icon="laptop" variant="secondary" onPress={doubleCheckWithHub} busy={hubBusy} />
+          </View>
+        ) : null}
+        {hubNote ? <Muted style={{ marginTop: S.sm }}>{hubNote}</Muted> : null}
       </Card>
 
       {tips.length ? (

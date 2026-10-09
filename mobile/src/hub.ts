@@ -58,6 +58,18 @@ export function hubQuickLog(base: string, text: string, today: string) {
   return postJson<{ records: ParsedRecord[]; meta: { model: string; durationMs: number; processor: string } }>(`${base}/api/ai/quicklog`, { text, today }, 60_000);
 }
 
+export interface HubReceipt {
+  merchant: string;
+  date: string;
+  items: { name: string; quantity: number; lineTotalCentavos: number }[];
+  totalCentavos: number;
+  check: { status: "ok" | "repaired" | "mismatch" | "no-items"; itemsSumCentavos: number; totalCentavos: number };
+}
+
+export function hubReceipt(base: string, image: string, today: string) {
+  return postJson<{ receipt: HubReceipt; meta: { model: string; durationMs: number; processor: string } }>(`${base}/api/ai/receipt`, { image, today }, 150_000);
+}
+
 export function hubAdvise(base: string, body: { question: string; context: string; history: { role: "user" | "assistant"; content: string }[] }) {
   return postJson<string>(`${base}/api/ai/advise`, body, 120_000);
 }
