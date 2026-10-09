@@ -5,7 +5,9 @@
 ## Before you go on stage (12:15 PM tech check)
 
 - [ ] Phone charged above 60%, **Do Not Disturb on**, brightness high, volume high (the phone speaks).
-- [ ] Privacy → **If the cloud disappears** shows ✓ for all three rows. Offline speech installed for the clerk's language. Gemini Nano: Ready.
+- [ ] AI Lab → **AI on this phone** shows ✓ for every model. Offline speech installed for the clerk's language. Gemini Nano: Ready.
+- [ ] Airplane mode **and Wi-Fi off** (Android can keep Wi-Fi on in airplane mode). The header must say **Offline · AI still on**.
+- [ ] Run the AI Lab demo once before going on stage, so Gemini Nano is warm.
 - [ ] Usap: **Ako: Filipino** (or English), **Sila: 日本語** (or English), situation **Hotel**. Hotel saved under "My stay".
 - [ ] Fresh data for the demo: Privacy → **Delete all data**; Home → ✎ on the trip → **End and remove this trip** → **Try a sample trip** (Tokyo, day 3 of 5). Check that "Today you can still spend" is green and under ₱900 so the taxi in step 4 tips it over.
 - [ ] The Japanese test menu (or a real one) in the gallery. A Japanese host message ready to share (a note or a chat message on the phone).
@@ -29,7 +31,7 @@
 
 **2:50 – 3:50 · Trip budget, live.** Home: **₱… left, today you can still spend ₱… (≈ ¥…)**. Gastos → say or type "taxi 2,300 yen" → **Basahin** → Save. The card turns red: **"Today is over its share by ₱…"**, and a pace warning appears. Back on Home, tap **Tips from Gemini Nano**: "✓ Checked: every amount comes from your own records. If the AI invents a number, we drop the tip."
 
-**3:50 – 4:30 · Why local, honestly.** Privacy → **If the cloud disappears**. "Speech, translation, text recognition and Gemini Nano all run on this phone. We only show numbers we measured: on a Taglish test set we never tuned for, 12 of 15 fully right on this phone, 14 of 15 with a laptop model. The test is in the app and the repo."
+**3:50 – 4:30 · Prove it: the AI Lab.** Tap **AI Lab → Run the offline AI demo** and keep talking while it runs (about 30 s). Point at the steps as they turn green: "Japanese OCR in a quarter second. ML Kit says 'give me your accounting by cash register'; Gemini Nano says 'please pay at the register'. The camera read ¥4,895 as 44,895, and our code caught it." End on the summary: **9 of 9 steps, 0 bytes sent, 0 bytes received**, measured by Android itself. "We only show numbers we measured: on a Taglish test set we never tuned for, 12 of 15 fully right on this phone. The test is in the app and the repo."
 
 **4:30 – 5:00 · Close.** "LakbayMate: kahit walang internet, may kasama ka sa lakbay. Even offline, you can talk, read and stay on budget. Thank you."
 

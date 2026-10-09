@@ -4,7 +4,7 @@ Copy each field into the Cerebral Valley form. Items in [brackets] still need fi
 
 **Project name:** LakbayMate — Your Smart Travel Companion
 
-**Short description:** LakbayMate is an offline travel companion for Filipinos abroad. Talk with anyone: LakbayMate hears their language, shows it in Filipino or English, suggests replies you can edit, says your answer aloud in natural Japanese, Korean or Chinese, and translates it back so you can check it. Scan menus to get dish names and prices in pesos. Set a trip budget that updates the moment you log spending, with tips. All the AI runs on the phone (Gemini Nano, ML Kit, on-device speech), so it works in airplane mode.
+**Short description:** LakbayMate is an offline travel companion for Filipinos abroad. Talk with anyone: LakbayMate hears their language, shows it in Filipino or English, suggests replies you can edit, says your answer aloud in natural Japanese, Korean or Chinese, and translates it back so you can check it. Scan menus to get dish names and prices in pesos. Set a trip budget that updates the moment you log spending, with tips. All the AI runs on the phone (Gemini Nano, ML Kit, on-device speech), so it works in airplane mode, and the built-in AI Lab proves it: nine live AI steps with timings, and Android's own count of the bytes sent (zero).
 
 **Team members:** [official team name and member names from appbuildersph.com/hackathon]
 
@@ -55,7 +55,7 @@ Taglish quick-log, three sets of 15 sentences (dev; held-out committed before tu
 - Gemma 3 4B on the laptop hub: dev 15 → 15, held-out 12 → 14, **final 14 → 14 of 15**; median 2.1 s.
 - Basic mode (no AI): dev 11, held-out 7, final 9 of 15.
 
-Observed on the phone (single runs, not benchmarks): Gemini Nano budget tips in 4.3 s and 4.6 s; Japanese OCR of a synthetic test menu in 0.2 s; Gemini Nano menu reading in 7.8–18.3 s over three runs. All test sentences were written by us; sets are small, so treat results as indicative. Details and caveats are in the README.
+Observed on the phone (single runs, not benchmarks): the AI Lab ran 9 of 9 on-device AI steps in 30.0 s and 28.2 s in airplane mode, with 0 bytes sent and received by the app (Android TrafficStats); Gemini Nano budget tips in 4.3 s and 4.6 s; Japanese OCR of a synthetic test menu in 0.2 s; Gemini Nano menu reading in 7.8–18.3 s over three runs. All test sentences were written by us; sets are small, so treat results as indicative. Details and caveats are in the README.
 
 ## Suggested post (X / LinkedIn)
 
