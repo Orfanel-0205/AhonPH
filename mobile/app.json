@@ -26,8 +26,7 @@
       [
         "expo-image-picker",
         {
-          "cameraPermission": "KitaPH uses the camera to scan receipts. Photos are read on your phone and never uploaded.",
-          "microphonePermission": false
+          "cameraPermission": "KitaPH uses the camera to scan receipts. Photos are read on your phone and never uploaded."
         }
       ],
       [

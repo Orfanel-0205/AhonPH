@@ -42,14 +42,27 @@ const base = (l: string) => {
   return b === "cmn" || b === "yue" ? "zh" : b === "fil" ? "tl" : b;
 };
 
+/** Exact offline locales installed on this phone, e.g. ["en-GB", "ja-JP"]. */
+let installed: string[] = [];
+
 /** Translation language codes whose offline speech model is installed on this phone. */
 export async function offlineSpeechLanguages(): Promise<string[]> {
   try {
     const r = await ExpoSpeechRecognitionModule.getSupportedLocales({});
-    return [...new Set(r.installedLocales.map(base))];
+    installed = r.installedLocales;
+    console.log(`[KitaSpeech] installed offline locales: ${installed.join(", ")}`);
+    return [...new Set(installed.map(base))];
   } catch {
     return [];
   }
+}
+
+/** The installed variant for a language (en-GB rather than en-US if that is what's on the phone). */
+function localeFor(code: string): string {
+  const preferred = SPEECH_LOCALE[code] ?? code;
+  const exact = installed.find((l) => norm(l) === norm(preferred));
+  if (exact) return exact;
+  return installed.find((l) => base(l) === code) ?? preferred;
 }
 
 /** Asks Android to download the offline speech model for a language (one time, needs Wi-Fi). */
@@ -77,6 +90,8 @@ export interface Listening {
 export async function listen(code: string, onPartial: (text: string) => void): Promise<Listening> {
   const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
   if (!perm.granted) throw new Error(ERROR_TEXT["not-allowed"]);
+  if (installed.length === 0) await offlineSpeechLanguages();
+  const locale = localeFor(code);
   let latest = "";
   const subs: { remove: () => void }[] = [];
   const done = new Promise<string>((resolve, reject) => {
@@ -89,6 +104,7 @@ export async function listen(code: string, onPartial: (text: string) => void): P
         }
       }),
       ExpoSpeechRecognitionModule.addListener("error", (e) => {
+        console.log(`[KitaSpeech] error ${e.error}: ${e.message} (locale ${locale})`);
         if (e.error === "aborted") return;
         if ((e.error === "no-speech" || e.error === "speech-timeout") && latest) return;
         reject(new Error(ERROR_TEXT[e.error] ?? `Speech error: ${e.message || e.error}`));
@@ -97,7 +113,7 @@ export async function listen(code: string, onPartial: (text: string) => void): P
     );
   }).finally(() => subs.forEach((s) => s.remove()));
   ExpoSpeechRecognitionModule.start({
-    lang: SPEECH_LOCALE[code] ?? code,
+    lang: locale,
     interimResults: true,
     continuous: false,
     requiresOnDeviceRecognition: true,

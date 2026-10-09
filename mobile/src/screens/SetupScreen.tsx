@@ -42,7 +42,9 @@ export function SetupScreen({ onDone }: { onDone: () => void }) {
   const { settings, setSettings } = useStore();
   const nano = useNano();
   const [langs, setLangs] = useState<string[]>([]);
-  const [wanted, setWanted] = useState<string[]>([settings.targetLang || "en"]);
+  const [wanted, setWanted] = useState<string[]>(() =>
+    [...new Set([settings.themLang, settings.targetLang].filter((c) => TRAVELER_LANGUAGES.some((l) => l.code === c)))],
+  );
   const [langBusy, setLangBusy] = useState(false);
   const [langError, setLangError] = useState<string | null>(null);
   const [speechLangs, setSpeechLangs] = useState<string[] | null>(null);
@@ -56,7 +58,7 @@ export function SetupScreen({ onDone }: { onDone: () => void }) {
   }, []);
 
   // Offline speech: Filipino and English for you, plus the languages you picked for the people you'll meet.
-  const speechNeeded = [...new Set(["tl", "en", ...wanted])];
+  const speechNeeded = [...new Set(["tl", "en", settings.themLang, ...wanted])];
   const speechMissing = speechLangs ? speechNeeded.filter((l) => !speechLangs.includes(l)) : speechNeeded;
 
   async function getSpeech() {

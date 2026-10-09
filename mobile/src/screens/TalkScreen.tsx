@@ -159,8 +159,13 @@ export function TalkScreen() {
           ))}
         </ScrollView>
 
-        {missingSpeech.length ? (
-          <Pill label={`Offline speech not downloaded: ${missingSpeech.map(langLabel).join(", ")} (Privacy → Offline AI setup). You can still type.`} tone="warning" icon="mic-off" />
+        {missingSpeech.includes(them) ? (
+          <Pill label={`Offline speech for ${langLabel(them)} isn't on this phone yet. Download it in Privacy → Offline AI setup.`} tone="warning" icon="mic-off" />
+        ) : null}
+        {missingSpeech.includes(me) ? (
+          <Muted style={{ marginTop: 4 }}>
+            Offline speech for {langLabel(me)} isn&apos;t available on this phone, so type or tap a reply bubble{me !== "en" ? ", or switch Ako to English to speak" : ""}.
+          </Muted>
         ) : null}
 
         {(scenario === "hotel" || scenario === "taxi") ? (
