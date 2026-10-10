@@ -44,6 +44,7 @@ export {
 } from "../../src/lib/talk";
 export { applyCurrency, type ForeignRecord } from "../../src/lib/tripMoney";
 export { convertToPhp, detectCurrency, formatCurrency } from "../../src/lib/rates";
+export { rememberPhrase, savedTranslation, toggleFavorite, topPhrases, type PhraseMemory } from "../../src/lib/phraseMemory";
 export { hubErrorMessage, retryAfterSeconds } from "../../src/lib/apiErrors";
 export { combineSplit, parseSplit, ruleSplit, splitBill, splitPrompt, type SplitSource } from "../../src/lib/split";
 export { containsNote, lookupDish, type Dish } from "../../src/lib/dishes";

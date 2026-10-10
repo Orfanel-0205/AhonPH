@@ -12,6 +12,10 @@ import {
   isNanoLang,
   mergeReplies,
   phrasebookReplies,
+  rememberPhrase,
+  savedTranslation,
+  toggleFavorite,
+  topPhrases,
   SCENARIOS,
   suggestionPrompt,
   TAKE_ME_TO_HOTEL,
@@ -22,7 +26,7 @@ import { listen, offlineSpeechLanguages, speak, THEM_LANGS, type Listening } fro
 import { useStore } from "../store";
 import { C, S } from "../theme";
 
-type Via = "phrasebook" | "nano" | "polished" | "translator";
+type Via = "phrasebook" | "nano" | "polished" | "translator" | "saved";
 
 interface Line {
   id: number;
@@ -55,6 +59,7 @@ const viaLabel = (via: Via, ai: string, where: string): string =>
     nano: `✨ ${ai}, ${where}`,
     polished: `✨ Tidied by ${ai}, then translated`,
     translator: "Translated on this phone",
+    saved: "⭐ Your saved phrase · instant",
   })[via];
 
 /** Usap: two-way conversation help abroad. Speech, translation, reply ideas and voice all run on the phone. */
@@ -203,10 +208,12 @@ export function TalkScreen({ incoming, onIncomingRead }: { incoming?: string | n
     setError(null);
     setSending(true);
     try {
-      let translated = curatedTranslation(t, them);
+      // A phrase said before is instant: its saved translation needs no AI and no translation pack.
+      const saved = savedTranslation(settings.phrases, t, them);
+      let translated: string | null = saved?.text ?? curatedTranslation(t, them);
       let polished: string | undefined;
-      let via: Via = "phrasebook";
-      let back = t;
+      let via: Via = saved ? "saved" : "phrasebook";
+      let back = saved?.back ?? t;
       if (!translated) {
         let english = me === "en" ? t : await translate(t, me, "en");
         translated = curatedTranslation(english, them);
@@ -240,6 +247,7 @@ export function TalkScreen({ incoming, onIncomingRead }: { incoming?: string | n
       setLines((l) => [...l, line]);
       setDraft("");
       speak(translated, them);
+      setSettings({ phrases: rememberPhrase(settings.phrases, t, them, { text: translated, back, via: via === "saved" ? (saved?.via ?? "saved") : via }) });
     } catch (e) {
       setError(`Couldn't translate: ${e instanceof Error ? e.message : String(e)}. Connect once to download the language pack.`);
     } finally {
@@ -438,6 +446,13 @@ export function TalkScreen({ incoming, onIncomingRead }: { incoming?: string | n
                   <Pressable accessibilityLabel="Show big" hitSlop={10} onPress={() => setShown(l)}>
                     <Ionicons name="expand" size={20} color="#fff" />
                   </Pressable>
+                  <Pressable
+                    accessibilityLabel="Save as a favorite phrase"
+                    hitSlop={10}
+                    onPress={() => setSettings({ phrases: toggleFavorite(settings.phrases, l.original) })}
+                  >
+                    <Ionicons name={topPhrases(settings.phrases, 60).some((p) => p.fav && p.text.toLowerCase() === l.original.toLowerCase()) ? "star" : "star-outline"} size={20} color="#fff" />
+                  </Pressable>
                   <Pressable accessibilityLabel="Send to a chat app" hitSlop={10} onPress={() => Share.share({ message: l.translated })}>
                     <Ionicons name="share-social-outline" size={20} color="#fff" />
                   </Pressable>
@@ -455,6 +470,51 @@ export function TalkScreen({ incoming, onIncomingRead }: { incoming?: string | n
         {error ? (
           <View style={{ marginTop: S.sm }}>
             <ErrorBox message={error} />
+          </View>
+        ) : null}
+
+        {topPhrases(settings.phrases).length ? (
+          <View style={{ marginTop: S.lg }}>
+            <View style={[styles.row, { justifyContent: "space-between", marginBottom: S.sm }]}>
+              <Text style={{ fontSize: 14, fontWeight: "800", color: C.text }}>⭐ Madalas mong sabihin · Your phrases</Text>
+              <Muted>Tap to say · instant</Muted>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: S.sm, paddingRight: S.lg }}>
+              {topPhrases(settings.phrases).map((p) => {
+                const tr = p.translations[them];
+                return (
+                  <Pressable
+                    key={p.text}
+                    onPress={() => send(p.text)}
+                    onLongPress={() => setDraft(p.text)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Say: ${p.text}${tr ? `, ${tr.text}` : ""}`}
+                    style={({ pressed }) => ({
+                      maxWidth: 230,
+                      paddingVertical: 10,
+                      paddingHorizontal: 14,
+                      borderRadius: 16,
+                      borderWidth: 1,
+                      borderColor: p.fav ? C.accent : C.border,
+                      backgroundColor: pressed ? C.brandSoft : p.fav ? C.accentSoft : C.surface,
+                    })}
+                  >
+                    <Text style={{ fontSize: 14, fontWeight: "700", color: C.text }} numberOfLines={2}>
+                      {p.fav ? "★ " : ""}
+                      {p.text}
+                    </Text>
+                    {tr ? (
+                      <Text style={{ fontSize: 14, color: C.brandStrong, marginTop: 2 }} numberOfLines={2}>
+                        {tr.text}
+                      </Text>
+                    ) : (
+                      <Text style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Not yet in {langLabel(them)}</Text>
+                    )}
+                    <Text style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{p.count ? `said ${p.count}×` : "starred"}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
           </View>
         ) : null}
 

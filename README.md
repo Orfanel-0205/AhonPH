@@ -9,13 +9,18 @@ Abroad, data costs money and the language is a wall. LakbayMate helps Filipino t
 - **Trip budget:** set a peso budget for the trip. Everything you scan, say or type ("taxi 2,300 yen") updates it **immediately**: what's left, **what you can still spend today** in pesos and yen, your pace, and tips. Tips are computed by code; Gemini Nano can add tips in its own words, and any tip with an amount that isn't in your records is dropped.
 
 - **Plan a trip:** pick a country and city (Tokyo, Osaka, Seoul, Hong Kong, Taipei, Singapore), days, travelers and what you like (food, culture, shopping, views, nature, theme parks, nightlife). LakbayMate builds a day-by-day plan with each area kept together and compares **Tipid**, **Sakto** (a bit pricey) and **Bongga** (splurge) per person in pesos. **Use as my trip budget** turns it into the live trip budget, and the trip card shows today's stops. The AI can add one tip per day, kept only if it names that day's places and has no prices.
+- **Your phrases:** the phrases you say most, and the ones you star, become one-tap bubbles that show the saved translation ("★ What time is check-out? → チェックアウトは何時ですか？"). Saying one again is instant: no AI, no translation pack, offline.
 - **Hatian (split the bill):** for barkada and family trips. Say who had what in one Taglish sentence ("kay Maria ang karaage, hati kaming lahat sa beer"); the local AI assigns the receipt items, and code computes each person's share in yen and pesos, with tax split by what each ordered, adding up to the total exactly. Share it as text, and save just your share to the trip budget.
 - **Team laptop AI:** a teammate's phone without Gemini Nano joins the team laptop's hotspot and gets every AI feature from the laptop's own model (Gemma 3 4B via Ollama), with the same prompts and code checks. No internet either way.
 - **AI Lab:** one button runs every on-device model live, in ten steps, on a bundled sample receipt and a short conversation. Each step shows its engine, a measured time and the result. At the end, Android's own counters report how many bytes the app sent and received during the run (0 in airplane mode).
 
 **All the AI runs on the phone** (speech recognition, translation, text recognition and Gemini Nano), so it keeps working in airplane mode, on a plane, in the subway, or without roaming.
 
-Built for the AppBuildersPH Hackathon 2026 (theme: Local AI). Android app + optional laptop hub + optional cloud backup.
+Built for the AppBuildersPH Hackathon 2026 (theme: Local AI). Android app + optional laptop hub + optional cloud (Render + Supabase, SQLite fallback).
+
+**Team:** Clifford Psalm Orfanel · Frances Timothy De Guzman · Claude Rada
+
+**Demo video:** `LakbayMate-demo.mp4` (61 s, recorded on the phone in airplane mode) · **Live cloud page:** [Render URL] · Docs: [API](docs/API.md) · [Engineering](docs/ENGINEERING.md) · [Demo Day reviewer](docs/REVIEWER.md)
 
 ## Why local AI
 
@@ -130,7 +135,7 @@ Caveats: we wrote all sentences ourselves; the "pinadala" family rule in `src/li
 
 Japanese quality was judged by our team, not formally evaluated. The hand-written Japanese, Korean and Chinese phrases are in `src/lib/talk.ts` for anyone to check.
 
-**Other checks.** Receipt vision with Qwen3-VL 2B on the hub read 1 synthetic receipt exactly (one generated image only). The on-device receipt reader is unit-tested on hand-built OCR layouts and one real phone OCR fixture; accuracy on real receipts has not been measured. Unit tests: `npm test` (163) and `cd cloud && pytest` (5).
+**Other checks.** Receipt vision with Qwen3-VL 2B on the hub read 1 synthetic receipt exactly (one generated image only). The on-device receipt reader is unit-tested on hand-built OCR layouts and one real phone OCR fixture; accuracy on real receipts has not been measured. Unit tests: `npm test` (166) and `cd cloud && pytest` (6).
 
 ## Running it
 
@@ -174,7 +179,9 @@ pytest
 uvicorn app.main:app --reload
 ```
 
-Deploy with `render.yaml` (Render Blueprint); set `SUPABASE_URL` and `SUPABASE_ANON_KEY` and run `cloud/supabase/schema.sql`. Backups are encrypted on the phone; the server stores ciphertext only. Without Supabase, `/v1/reference` serves the bundled data.
+**Live hosting on Render.** Render dashboard → New → Blueprint → this repository; `render.yaml` creates the `lakbaymate-cloud` web service (free plan). The service URL shows a live LakbayMate page at `/`, API docs at `/docs` and status at `/health`.
+
+**Storage.** With `SUPABASE_URL` and `SUPABASE_ANON_KEY` set (and `cloud/supabase/schema.sql` run in Supabase), backups use Supabase Postgres + Auth with row-level security, and reference data comes from Supabase, cached in SQLite in case Supabase is unreachable. Without them, the server uses **SQLite** (`cloud/app/db.py`, path `LAKBAYMATE_DB`): encrypted backups keyed by the SHA-256 of a device secret, and bundled reference data. On Render's free plan the disk resets on redeploy, so SQLite there is a cache, not permanent storage. Backups are encrypted on the phone; the server stores ciphertext only. No AI runs in the cloud.
 
 ## Data sources (bundled, dated)
 

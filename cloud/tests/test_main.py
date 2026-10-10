@@ -21,10 +21,28 @@ def test_reference_falls_back_to_bundled_data_without_supabase(monkeypatch):
     assert {e["id"]: e["value"] for e in body["econ"]}["headlineInflation"] == 7.2
 
 
-def test_backup_requires_configuration(monkeypatch):
+def test_backup_without_supabase_uses_sqlite(monkeypatch, tmp_path):
+    from app import db
+
     monkeypatch.setattr(main, "SUPABASE_URL", "")
-    r = client.get("/v1/backup", headers={"Authorization": "Bearer x"})
-    assert r.status_code == 503
+    monkeypatch.setattr(db, "DB_PATH", str(tmp_path / "test.db"))
+    key = {"Authorization": "Bearer " + "k" * 40}
+    assert client.get("/v1/backup", headers={"Authorization": "Bearer short"}).status_code == 401
+    assert client.get("/v1/backup", headers=key).status_code == 404
+    blob = {"ciphertext": "abc", "nonce": "n" * 24, "salt": "s" * 16, "kdf": "pbkdf2-sha256", "iterations": 210000, "cipher": "xchacha20-poly1305"}
+    assert client.put("/v1/backup", json=blob, headers=key).json()["storage"] == "sqlite"
+    assert client.get("/v1/backup", headers=key).json()["ciphertext"] == "abc"
+    assert client.delete("/v1/backup", headers=key).status_code == 200
+    assert client.get("/v1/backup", headers=key).status_code == 404
+
+
+def test_home_page_is_live(monkeypatch, tmp_path):
+    from app import db
+
+    monkeypatch.setattr(db, "DB_PATH", str(tmp_path / "test.db"))
+    r = client.get("/")
+    assert r.status_code == 200
+    assert "LakbayMate" in r.text and "No AI runs here" in r.text
 
 
 def test_backup_requires_sign_in(monkeypatch):
