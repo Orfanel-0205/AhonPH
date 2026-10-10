@@ -20,7 +20,7 @@ Built for the AppBuildersPH Hackathon 2026 (theme: Local AI). Android app + opti
 
 **Team:** Clifford Psalm Orfanel · Frances Timothy De Guzman · Claude Rada
 
-**Demo video:** `LakbayMate-demo.mp4` (61 s, recorded on the phone in airplane mode) · **Live cloud page:** [Render URL] · Docs: [API](docs/API.md) · [Engineering](docs/ENGINEERING.md) · [Demo Day reviewer](docs/REVIEWER.md)
+**Demo video:** `LakbayMate-demo.mp4` (61 s, recorded on the phone in airplane mode) · **Live cloud page:** https://lakbaymate-cloud.onrender.com (Render + Supabase) · Docs: [API](docs/API.md) · [Engineering](docs/ENGINEERING.md) · [Demo Day reviewer](docs/REVIEWER.md)
 
 ## Why local AI
 

@@ -8,7 +8,9 @@ Copy each field into the Cerebral Valley form. Items in [brackets] still need fi
 
 **Team members:** Clifford Psalm Orfanel, Frances Timothy De Guzman, Claude Rada · **Team name:** [as listed on appbuildersph.com/hackathon]
 
-**Public GitHub repository:** [https://github.com/…]
+**Public GitHub repository:** https://github.com/Orfanel-0205/AhonPH
+
+**Live (optional cloud):** https://lakbaymate-cloud.onrender.com
 
 **Demo video:** [link] · **X / LinkedIn post:** [link]
 
