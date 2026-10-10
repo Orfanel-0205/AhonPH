@@ -26,7 +26,7 @@ import {
 import { ExplainReceipt, receiptContext } from "../ExplainReceipt";
 import { TripCard } from "../TripBudget";
 import { useStore } from "../store";
-import { C, S } from "../theme";
+import { C, S, SHADOW } from "../theme";
 
 const PERIODS: { kind: PeriodKind; label: string }[] = [
   { kind: "last30", label: "Last 30 days" },
@@ -54,14 +54,17 @@ function QuickActions({ onGo }: { onGo: Go }) {
           style={({ pressed }) => ({
             flex: 1,
             padding: S.md,
-            borderRadius: 14,
+            borderRadius: 18,
             backgroundColor: pressed ? C.brandSoft : C.surface,
+            ...SHADOW,
             borderWidth: 1,
             borderColor: C.border,
             gap: 4,
           })}
         >
-          <Ionicons name={a.icon} size={22} color={C.brand} />
+          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.brandSoft, alignItems: "center", justifyContent: "center", marginBottom: 2 }}>
+            <Ionicons name={a.icon} size={21} color={C.brand} />
+          </View>
           <Text style={{ fontSize: 15, fontWeight: "800", color: C.text }}>{a.label}</Text>
           <Text style={{ fontSize: 12, color: C.muted }}>{a.sub}</Text>
         </Pressable>

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps, ReactNode } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import type { Insight, Severity } from "./shared";
-import { C, S } from "./theme";
+import { C, S, SHADOW } from "./theme";
 
 export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
   return <View style={[styles.card, style]}>{children}</View>;
@@ -143,19 +143,19 @@ export function ErrorBox({ message }: { message: string }) {
 }
 
 export const styles = StyleSheet.create({
-  card: { backgroundColor: C.surface, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: S.lg, marginBottom: S.md },
-  h2: { fontSize: 17, fontWeight: "700", color: C.text, marginBottom: S.sm },
+  card: { backgroundColor: C.surface, borderRadius: 20, borderWidth: 1, borderColor: "#e7ece5", padding: S.lg, marginBottom: S.md, ...SHADOW },
+  h2: { fontSize: 18, fontWeight: "800", color: C.text, marginBottom: S.sm, letterSpacing: -0.2 },
   muted: { fontSize: 13, color: C.muted, lineHeight: 18 },
-  button: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm, borderRadius: 12, borderWidth: 1, paddingVertical: 12, paddingHorizontal: S.lg, minHeight: 48 },
-  buttonText: { fontSize: 15, fontWeight: "600" },
+  button: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: S.sm, borderRadius: 14, borderWidth: 1, paddingVertical: 13, paddingHorizontal: S.lg, minHeight: 50 },
+  buttonText: { fontSize: 15, fontWeight: "700" },
   chip: { borderRadius: 999, borderWidth: 1, borderColor: C.border, backgroundColor: C.surface, paddingVertical: 7, paddingHorizontal: 12, minHeight: 36, justifyContent: "center" },
   chipText: { fontSize: 13, color: C.text, fontWeight: "500" },
   pill: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, alignSelf: "flex-start" },
   pillText: { fontSize: 12, fontWeight: "600" },
-  insight: { flexDirection: "row", gap: S.sm, borderRadius: 12, padding: S.md, marginBottom: S.sm },
+  insight: { flexDirection: "row", gap: S.sm, borderRadius: 14, padding: S.md, marginBottom: S.sm },
   insightTitle: { fontSize: 13, fontWeight: "700", marginBottom: 2 },
   insightBody: { fontSize: 14, color: C.text, lineHeight: 20 },
-  stat: { flexBasis: "47%", flexGrow: 1, backgroundColor: C.surface, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: S.md },
+  stat: { flexBasis: "47%", flexGrow: 1, backgroundColor: C.surface, borderRadius: 16, borderWidth: 1, borderColor: "#e7ece5", padding: S.md, ...SHADOW },
   statLabel: { fontSize: 12, color: C.muted, fontWeight: "600" },
   statValue: { fontSize: 22, fontWeight: "700", color: C.text, marginTop: 2, fontVariant: ["tabular-nums"] },
   statSub: { fontSize: 12, color: C.muted, marginTop: 2 },
@@ -169,5 +169,5 @@ export const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: "700", color: C.text, marginBottom: S.xs },
   input: { borderWidth: 1, borderColor: C.border, borderRadius: 12, backgroundColor: C.surface, paddingHorizontal: S.md, paddingVertical: 10, fontSize: 15, color: C.text, minHeight: 48 },
   screen: { padding: S.lg, paddingBottom: 120 },
-  title: { fontSize: 24, fontWeight: "800", color: C.text },
+  title: { fontSize: 28, fontWeight: "800", color: C.text, letterSpacing: -0.5 },
 });

@@ -16,6 +16,12 @@ export const C = {
   dangerSoft: "#fbe5e7",
   info: "#285e8f",
   infoSoft: "#e5eef7",
+  /** The gold of the app icon's sparkle, for small highlights. */
+  accent: "#e8a93a",
+  accentSoft: "#fdf3df",
 };
+
+/** One soft elevation for cards and tiles (Android elevation, iOS shadow). */
+export const SHADOW = { elevation: 2, shadowColor: "#0b3d2e", shadowOpacity: 0.07, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } } as const;
 
 export const S = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 };

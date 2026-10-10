@@ -81,11 +81,17 @@ function Shell() {
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={["top", "bottom"]}>
       <StatusBar style="dark" />
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: C.surface }}>
-        <View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: C.brand, alignItems: "center", justifyContent: "center" }}>
+            <Ionicons name="airplane" size={20} color="#fff" style={{ transform: [{ rotate: "-30deg" }] }} />
+            <View style={{ position: "absolute", top: 5, right: 5, width: 7, height: 7, borderRadius: 4, backgroundColor: C.accent }} />
+          </View>
+          <View>
           <Text style={{ fontSize: 20, fontWeight: "800", color: C.brandStrong }}>
             Lakbay<Text style={{ color: C.text }}>Mate</Text>
           </Text>
           <Text style={{ fontSize: 11, color: C.muted, marginTop: -2 }}>Your Smart Travel Companion</Text>
+          </View>
         </View>
         <NetworkChip />
       </View>
@@ -119,7 +125,9 @@ function Shell() {
                 accessibilityLabel={t.label}
                 style={{ flex: 1, alignItems: "center", paddingVertical: 8, minHeight: 56 }}
               >
-                <Ionicons name={active ? t.icon : (`${t.icon}-outline` as IconName)} size={22} color={active ? C.brand : C.muted} />
+                <View style={{ paddingHorizontal: 16, paddingVertical: 4, borderRadius: 999, backgroundColor: active ? C.brandSoft : "transparent" }}>
+                  <Ionicons name={active ? t.icon : (`${t.icon}-outline` as IconName)} size={22} color={active ? C.brand : C.muted} />
+                </View>
                 <Text style={{ fontSize: 11, marginTop: 2, color: active ? C.brand : C.muted, fontWeight: active ? "700" : "500" }}>{t.label}</Text>
               </Pressable>
             );
