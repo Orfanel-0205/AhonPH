@@ -12,7 +12,7 @@ Copy each field into the Cerebral Valley form. Items in [brackets] still need fi
 
 **Live (optional cloud):** https://lakbaymate-cloud.onrender.com
 
-**Demo video:** [link] · **X / LinkedIn post:** [link]
+**Demo video and LinkedIn post:** https://lnkd.in/p/gb9z9stD
 
 ## Why does this product benefit from running AI locally?
 
