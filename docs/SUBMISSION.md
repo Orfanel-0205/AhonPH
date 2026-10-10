@@ -6,7 +6,7 @@ Copy each field into the Cerebral Valley form. Items in [brackets] still need fi
 
 **Short description:** LakbayMate is an offline travel companion for Filipinos abroad. Talk with anyone: LakbayMate hears their language, shows it in Filipino or English, suggests replies you can edit, says your answer aloud in natural Japanese, Korean or Chinese, and translates it back so you can check it. Scan menus to get dish names and prices in pesos. Set a trip budget that updates the moment you log spending, with tips, plan a trip as Tipid, Sakto or Bongga and turn the plan into that budget, and split a receipt with your group by saying who had what. All the AI runs on the phone (Gemini Nano, ML Kit, on-device speech), so it works in airplane mode, and the built-in AI Lab proves it: ten live AI steps with timings, and Android's own count of the bytes sent (zero).
 
-**Team members:** Clifford Psalm Orfanel, Frances Timothy De Guzman, Claude Rada · **Team name:** [as listed on appbuildersph.com/hackathon]
+**Team members:** Clifford Psalm Orfanel, Frances Timothy De Guzman, Claude Rada · **Team name:** TechLARPs
 
 **Public GitHub repository:** https://github.com/Orfanel-0205/AhonPH
 

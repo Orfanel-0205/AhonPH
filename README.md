@@ -18,7 +18,7 @@ Abroad, data costs money and the language is a wall. LakbayMate helps Filipino t
 
 Built for the AppBuildersPH Hackathon 2026 (theme: Local AI). Android app + optional laptop hub + optional cloud (Render + Supabase, SQLite fallback).
 
-**Team:** Clifford Psalm Orfanel · Frances Timothy De Guzman · Claude Rada
+**Team TechLARPs:** Clifford Psalm Orfanel · Frances Timothy De Guzman · Claude Rada
 
 **Demo video:** `LakbayMate-demo.mp4` (61 s, recorded on the phone in airplane mode) · **Live cloud page:** https://lakbaymate-cloud.onrender.com (Render + Supabase) · Docs: [API](docs/API.md) · [Engineering](docs/ENGINEERING.md) · [Demo Day reviewer](docs/REVIEWER.md)
 
