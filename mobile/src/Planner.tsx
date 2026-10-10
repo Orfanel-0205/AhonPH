@@ -20,6 +20,7 @@ import {
 } from "./shared";
 import { useStore } from "./store";
 import { C, S } from "./theme";
+import { logHistory } from "./history";
 
 const COUNTRIES = [...new Set(CITIES.map((c) => c.country))];
 
@@ -90,6 +91,7 @@ export function PlannerModal({ open, onClose }: { open: boolean; onClose: () => 
       tripCurrency: city.currency,
       itinerary: { cityId: city.id, tier, aspects, days, travelers },
     });
+    logHistory("plan", `Planned ${city.name} · ${days} days · ${TIERS[tier - 1].label}`, `Budget ${pesos(plan.totals.pocket)} per person; hotel about ${pesos(plan.totals.hotel)}`);
     onClose();
   }
 

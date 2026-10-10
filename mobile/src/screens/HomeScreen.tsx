@@ -27,6 +27,7 @@ import { ExplainReceipt, receiptContext } from "../ExplainReceipt";
 import { TripCard } from "../TripBudget";
 import { useStore } from "../store";
 import { C, S, SHADOW } from "../theme";
+import { HistoryModal } from "../HistoryScreen";
 
 const PERIODS: { kind: PeriodKind; label: string }[] = [
   { kind: "last30", label: "Last 30 days" },
@@ -43,8 +44,10 @@ function QuickActions({ onGo }: { onGo: Go }) {
     { tab: "scan", icon: "scan", label: "Scan", sub: "Menu, sign, receipt" },
     { tab: "ask", icon: "mic", label: "Gastos", sub: "Say what you spent" },
   ];
+  const [historyOpen, setHistoryOpen] = useState(false);
   return (
-    <View style={{ flexDirection: "row", gap: S.sm, marginBottom: S.md }}>
+    <View style={{ marginBottom: S.md }}>
+    <View style={{ flexDirection: "row", gap: S.sm }}>
       {actions.map((a) => (
         <Pressable
           key={a.tab}
@@ -69,6 +72,11 @@ function QuickActions({ onGo }: { onGo: Go }) {
           <Text style={{ fontSize: 12, color: C.muted }}>{a.sub}</Text>
         </Pressable>
       ))}
+    </View>
+      <Pressable onPress={() => setHistoryOpen(true)} accessibilityRole="button" style={{ marginTop: S.sm, alignSelf: "flex-start" }}>
+        <Text style={{ color: C.brandStrong, fontWeight: "700" }}>🕘 Kasaysayan · History →</Text>
+      </Pressable>
+      <HistoryModal open={historyOpen} onClose={() => setHistoryOpen(false)} />
     </View>
   );
 }

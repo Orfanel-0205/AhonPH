@@ -25,6 +25,7 @@ import {
 import { listen, offlineSpeechLanguages, speak, THEM_LANGS, type Listening } from "../speech";
 import { useStore } from "../store";
 import { C, S } from "../theme";
+import { logHistory } from "../history";
 
 type Via = "phrasebook" | "nano" | "polished" | "translator" | "saved";
 
@@ -170,6 +171,7 @@ export function TalkScreen({ incoming, onIncomingRead }: { incoming?: string | n
         setLines(put(line));
       }
     }
+    logHistory("usap", `Sila (${langLabel(from)}): ${line.translated}`, line.original);
     english ??= from === "en" ? original : me === "en" ? quick : await translate(original, from, "en");
     refreshSuggestions(line.translated, english, put(line));
   }
@@ -247,6 +249,7 @@ export function TalkScreen({ incoming, onIncomingRead }: { incoming?: string | n
       setLines((l) => [...l, line]);
       setDraft("");
       speak(translated, them);
+      logHistory("usap", `Ako: ${translated}`, `${t}${back && back !== t ? ` · Means: ${back}` : ""}`);
       setSettings({ phrases: rememberPhrase(settings.phrases, t, them, { text: translated, back, via: via === "saved" ? (saved?.via ?? "saved") : via }) });
     } catch (e) {
       setError(`Couldn't translate: ${e instanceof Error ? e.message : String(e)}. Connect once to download the language pack.`);

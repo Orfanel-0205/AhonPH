@@ -9,6 +9,7 @@ import { listen } from "./speech";
 import { newId, useStore } from "./store";
 import { C, S } from "./theme";
 import { TripCard } from "./TripBudget";
+import { logHistory } from "./history";
 
 export interface SplitItem {
   /** What the person reads (English name when the AI gave one). */
@@ -102,6 +103,10 @@ export function SplitModal({
     const c = combineSplit(rule, aiShares);
     setShares(c.shares);
     setSources(c.source);
+    {
+      const amounts = splitBill(items.map((i) => i.total), c.shares, people.length, total, decimals).amounts;
+      logHistory("split", `Hatian · ${store ?? "Receipt"} · ${local(total)}`, people.map((p, i) => `${p} ${local(amounts[i] ?? 0)}`).join(" · "));
+    }
     const n = (k: SplitSource) => c.source.filter((x) => x === k).length;
     setNote(
       [

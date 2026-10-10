@@ -9,6 +9,7 @@ import { buildSampleData, ECON_FACTS, formatDate, formatPeso, FX, QUICKLOG_CASES
 import { EMPTY_DATA, useStore } from "../store";
 import { OfflineAIDemo, OnPhoneModels, TeamLaptopAI } from "./AILab";
 import { C, S } from "../theme";
+import { clearHistory } from "../history";
 
 function Row({ title, body }: { title: string; body: string }) {
   return (
@@ -173,6 +174,7 @@ export function PrivacyScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
   // App preferences (languages, AI setup, hub address) are kept so the phone stays ready to demo offline.
   const deleteEverything = () => {
     update(() => EMPTY_DATA);
+    clearHistory();
     setSettings({ trip: null, tripCurrency: null, itinerary: null, phrases: {}, companions: ["Ako"], stayName: "", stayAddress: "" });
   };
   const nanoText =
@@ -232,7 +234,7 @@ export function PrivacyScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
             onPress={() =>
               Alert.alert(
                 "Delete all data?",
-                "This removes every record, receipt, trip, saved phrase, companion and hotel address from this phone. Languages and AI setup stay. It can't be undone.",
+                "This removes every record, receipt, trip, history entry, saved phrase, companion and hotel address from this phone. Languages and AI setup stay. It can't be undone.",
                 [
                   { text: "Cancel", style: "cancel" },
                   { text: "Delete", style: "destructive", onPress: deleteEverything },

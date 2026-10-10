@@ -48,6 +48,7 @@ import { SplitModal } from "../SplitBill";
 import { TripCard } from "../TripBudget";
 import { newId, useStore } from "../store";
 import { C, S } from "../theme";
+import { logHistory } from "../history";
 
 type Mode = "worker" | "traveler";
 
@@ -87,6 +88,8 @@ export function ScanScreen({ onSaved }: { onSaved: () => void }) {
         mode === "traveler" ? await recognizeAnyScript(uri, expectedScript(settings.themLang, settings.tripCurrency)) : await recognizeText(uri);
       if (!result.text.trim()) setError("No text found. Try a sharper, well-lit photo with the whole receipt in view.");
       setOcr(result);
+      if (result.text.trim())
+        logHistory("scan", `${mode === "traveler" ? "Scanned abroad" : "Scanned a receipt"} · ${result.lines.length} lines`, result.text.split("\n").filter(Boolean).slice(0, 3).join(" · "));
     } catch (e) {
       setError(`Could not read the photo: ${e instanceof Error ? e.message : String(e)}`);
     } finally {

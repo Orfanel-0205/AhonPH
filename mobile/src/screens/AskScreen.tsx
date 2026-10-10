@@ -29,6 +29,7 @@ import {
 import { TripCard } from "../TripBudget";
 import { newId, useStore } from "../store";
 import { C, S } from "../theme";
+import { logHistory } from "../history";
 
 const SUGGESTIONS = ["Saan napupunta ang pera ko?", "Paano ako makakatipid sa susunod na buwan?", "Paano ako maaapektuhan ng inflation?"];
 const TRIP_SUGGESTIONS = ["Kaya ko pa ba ang budget ko sa trip?", "Magkano pa ang pwede kong gastusin ngayon?", "Saan ako pinakamalaki gumastos sa trip?"];
@@ -135,7 +136,8 @@ export function AskScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
   ];
   const engine = engines.find((e) => e.id === engineId) ?? engines[0];
 
-  const saveRecords = (records: ParsedRecord[]) =>
+  const saveRecords = (records: ParsedRecord[]) => {
+    for (const r of records) logHistory("gastos", `${r.type === "income" ? "+" : "−"}${formatPeso(r.amountCentavos)} · ${r.description}`, r.date);
     update((d) => ({
       ...d,
       transactions: [
@@ -143,6 +145,7 @@ export function AskScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
         ...d.transactions,
       ],
     }));
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">

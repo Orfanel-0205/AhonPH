@@ -13,6 +13,7 @@ import { applyCurrency, combineSplit, containsNote, convertToPhp, formatCurrency
 import { listen, offlineSpeechLanguages, speak, THEM_LANGS } from "../speech";
 import { useStore } from "../store";
 import { C, S } from "../theme";
+import { logHistory } from "../history";
 
 /** A sample receipt bundled in the app (invented store, made for this demo). */
 const DEMO_RECEIPT = "demo-receipt-ja.png";
@@ -286,6 +287,7 @@ export function OfflineAIDemo() {
       ok++;
 
     const after = appNetworkBytes();
+    logHistory("ailab", `AI Lab · ${ok} of ${STEPS.length} AI steps in ${((Date.now() - t0) / 1000).toFixed(1)} s`, `${startOffline ? "Offline" : "Online"}${before && after ? ` · ${after.sent - before.sent} bytes sent, ${after.received - before.received} received` : ""}`);
     setSummary({
       ms: Date.now() - t0,
       done: ok,
