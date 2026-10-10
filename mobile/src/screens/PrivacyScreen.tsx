@@ -167,8 +167,14 @@ function CloudGoneCard() {
 }
 
 export function PrivacyScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
-  const { data, update } = useStore();
+  const { data, update, setSettings } = useStore();
   const nano = useNano();
+  // Personal data lives in two places: records/receipts, and settings (trip, phrases, companions, hotel).
+  // App preferences (languages, AI setup, hub address) are kept so the phone stays ready to demo offline.
+  const deleteEverything = () => {
+    update(() => EMPTY_DATA);
+    setSettings({ trip: null, tripCurrency: null, itinerary: null, phrases: {}, companions: ["Ako"], stayName: "", stayAddress: "" });
+  };
   const nanoText =
     nano.status === "available"
       ? `Ready${nano.info?.baseModel ? ` (${nano.info.baseModel})` : ""}. Android's built-in model; LakbayMate bundles none.`
@@ -224,10 +230,14 @@ export function PrivacyScreen({ onOpenSetup }: { onOpenSetup: () => void }) {
             icon="trash"
             variant="danger"
             onPress={() =>
-              Alert.alert("Delete all data?", "This removes every record and receipt from this phone. It can't be undone.", [
-                { text: "Cancel", style: "cancel" },
-                { text: "Delete", style: "destructive", onPress: () => update(() => EMPTY_DATA) },
-              ])
+              Alert.alert(
+                "Delete all data?",
+                "This removes every record, receipt, trip, saved phrase, companion and hotel address from this phone. Languages and AI setup stay. It can't be undone.",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  { text: "Delete", style: "destructive", onPress: deleteEverything },
+                ],
+              )
             }
           />
         </View>
