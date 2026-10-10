@@ -46,3 +46,6 @@ next-env.d.ts
 /mobile/.expo
 /mobile/modules/*/android/build
 /mobile/modules/*/android/.cxx
+
+# Demo videos (shared outside git)
+*.mp4

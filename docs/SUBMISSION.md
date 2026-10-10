@@ -59,8 +59,28 @@ Bill split, who had what (12 development + 8 held-out sentences, held-out commit
 
 Observed on the phone (single runs, not benchmarks): the AI Lab ran 10 of 10 AI steps in 30.3–31.0 s on Gemini Nano and 9.7–11.2 s through the team laptop; earlier 9-step runs took 30.0 s and 28.2 s in airplane mode, with 0 bytes sent and received by the app (Android TrafficStats); Gemini Nano budget tips in 4.3 s and 4.6 s; Japanese OCR of a synthetic test menu in 0.2 s; Gemini Nano menu reading in 7.8–18.3 s over three runs. All test sentences were written by us; sets are small, so treat results as indicative. Details and caveats are in the README.
 
-## Suggested post (X / LinkedIn)
+## Posts (video: `LakbayMate-demo.mp4`, 61 s, 1080x1920)
 
-> We built LakbayMate at #AppBuildersPH 2026: an offline travel companion for Filipinos abroad. Talk with anyone in natural Japanese, read menus as dish names in pesos, and keep a live trip budget, with the AI running entirely on the phone (Gemini Nano + ML Kit). Airplane mode on, still works. [video link] [repo link]
+**LinkedIn**
 
-Tag Devin / Cognition as required; check their handles before posting.
+> Abroad, the internet is the first thing to go: no roaming, a dead pocket Wi-Fi, the subway. That's exactly when you need to talk to a hotel clerk, read a receipt, or check if you can still afford dinner.
+>
+> In 24 hours at #AppBuildersPH Hackathon 2026, we built LakbayMate, your smart travel companion for Filipinos traveling and working abroad. Every AI model runs on the phone:
+>
+> 🗣️ Usap: a host texts you in Japanese; Gemini Nano reads it and helps you reply in natural Japanese
+> 🧾 Scan: a Japanese receipt, itemized, checked against its own totals, in pesos
+> 👥 Hatian: split the bill by saying who had what, in Taglish
+> 🗺️ Plan: Tipid, Sakto or Bongga itineraries that become a live trip budget
+> 🧪 AI Lab: 10 AI steps run live in airplane mode, and Android measures 0 bytes sent
+>
+> Our rule: facts first, AI second, and every AI answer checked by code.
+>
+> Built with Gemini Nano (Android AICore), Google ML Kit and on-device speech. Thanks to @Cognition / Devin and the AppBuildersPH team.
+>
+> Repo: [link] · #AppBuildersPH #LocalAI #OnDeviceAI #OFW
+
+**X** (≤ 280 characters)
+
+> We built LakbayMate at #AppBuildersPH: a travel companion for Filipinos abroad whose AI runs on the phone. Talk in Japanese, scan receipts, split bills, plan trips, all in airplane mode. 0 bytes sent. @cognition_labs [repo link]
+
+Tag Devin / Cognition as required; check their exact handles before posting.
